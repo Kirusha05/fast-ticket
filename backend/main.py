@@ -1,11 +1,9 @@
 from contextlib import asynccontextmanager
 from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
-
 from config.db_session import init_db_pool, close_db_pool
 
 from routes.users import router as user_router
-# from routes.auth import router as auth_router
 
 
 @asynccontextmanager
@@ -28,8 +26,6 @@ async def health():
     return {"status": "ok"}
 
 app.include_router(user_router, prefix="/users")
-# app.include_router(auth_router, prefix="/auth")
-
 
 # CORS middleware
 app.add_middleware(
