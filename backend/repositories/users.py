@@ -20,9 +20,9 @@ class UsersRepository(BaseRepository):
     async def create(self, user: User) -> User | None:
         async with self.db_session.cursor() as cursor:
             await cursor.execute("""
-            INSERT INTO users (id, name, email, auth0_id, created_at, updated_at) 
-            VALUES (%s, %s, %s, %s, NOW(), NOW())
-            RETURNING *
+                INSERT INTO users (id, name, email, auth0_id) 
+                VALUES (%s, %s, %s, %s)
+                RETURNING *
             """,
             (user.id.value, user.name, user.email, user.auth0_id))
             db_user = await cursor.fetchone()
@@ -69,8 +69,8 @@ class UsersRepository(BaseRepository):
             # await cursor.execute("SET TRANSACTION ISOLATION LEVEL SERIALIZABLE")
             
             await cursor.execute("""
-            UPDATE users SET name = %s, email = %s, auth0_id = %s, updated_at = NOW() WHERE id = %s
-            RETURNING *
+                UPDATE users SET name = %s, email = %s, auth0_id = %s, updated_at = NOW() WHERE id = %s
+                RETURNING *
             """,
             (user.name, user.email, user.auth0_id, id.value))
             db_user = await cursor.fetchone()
