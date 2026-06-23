@@ -7,7 +7,7 @@ class BookingsRepository(BaseRepository):
     def __init__(self, db_session: AsyncConnection):
         super().__init__(db_session)
 
-    def _map_db_model_to_entity(self, booking_row, seats) -> Booking:
+    def _map_db_model_to_entity(self, booking_row, seats: list[Seat]) -> Booking:
         return Booking(
             id=Booking.build_entity_id_from_uuid(booking_row['id']),
             user_id=User.build_entity_id_from_uuid(booking_row['user_id']),
@@ -42,7 +42,7 @@ class BookingsRepository(BaseRepository):
             db_booking = await cursor.fetchone()
             if not db_booking:
                 return None
-            return self._map_db_model_to_entity(db_booking)
+            return self._map_db_model_to_entity(db_booking, [])
 
     async def get_by_id(self, id: EntityId) -> Booking | None:
         async with self.db_session.cursor() as cursor:
@@ -83,7 +83,7 @@ class BookingsRepository(BaseRepository):
         async with self.db_session.cursor() as cursor:
             await cursor.execute("SELECT * FROM bookings")
             db_bookings = await cursor.fetchall()
-            return [self._map_db_model_to_entity(db_booking) for db_booking in db_bookings]
+            return [self._map_db_model_to_entity(db_booking, []) for db_booking in db_bookings]
 
     async def update(self, id: EntityId, booking: Booking) -> Booking | None:
         async with self.db_session.cursor() as cursor:
@@ -98,7 +98,7 @@ class BookingsRepository(BaseRepository):
             db_booking = await cursor.fetchone()
             if not db_booking:
                 return None
-            return self._map_db_model_to_entity(db_booking)
+            return self._map_db_model_to_entity(db_booking, [])
 
     async def delete(self, id: EntityId) -> bool:
         async with self.db_session.cursor() as cursor:
@@ -112,7 +112,7 @@ class BookingsRepository(BaseRepository):
                 (user_id.value,)
             )
             db_bookings = await cursor.fetchall()
-            return [self._map_db_model_to_entity(db_booking) for db_booking in db_bookings]
+            return [self._map_db_model_to_entity(db_booking, []) for db_booking in db_bookings]
 
     async def get_by_event_id(self, event_id: EntityId) -> list[Booking]:
         async with self.db_session.cursor() as cursor:
@@ -121,4 +121,4 @@ class BookingsRepository(BaseRepository):
                 (event_id.value,)
             )
             db_bookings = await cursor.fetchall()
-            return [self._map_db_model_to_entity(db_booking) for db_booking in db_bookings]
+            return [self._map_db_model_to_entity(db_booking, []) for db_booking in db_bookings]

@@ -14,7 +14,6 @@ async def get_all_users(db=Depends(get_db_session)):
 
 @router.get("/profile")
 async def get_profile(
-    # db=Depends(get_db_session),
     user=Depends(get_current_user)
 ):
     return user

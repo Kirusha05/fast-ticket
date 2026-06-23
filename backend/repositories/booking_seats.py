@@ -1,6 +1,7 @@
 from repositories.base import BaseRepository
 from psycopg import AsyncConnection
 from models import EntityId
+from typing import Any
 
 
 class BookingSeatsRepository(BaseRepository):
@@ -48,3 +49,16 @@ class BookingSeatsRepository(BaseRepository):
                 (booking_id.value, seat_id.value)
             )
             return cursor.rowcount > 0
+
+    # There need to be desined as this repository inherits from an abstract class
+    def _map_db_model_to_entity(self, data):
+        pass
+    
+    async def get_by_id(self, id: EntityId) -> Any:
+        pass
+
+    async def get_all(self) -> list[Any]:
+        pass
+
+    async def update(self, id: EntityId, data: Any) -> Any:
+        pass

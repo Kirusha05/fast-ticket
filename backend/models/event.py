@@ -34,3 +34,10 @@ class CreateEventRequest(BaseModel):
     event_date: datetime
     event_type: EventType
     total_tickets: int | None = None
+
+
+class UpdateEventRequest(BaseModel):
+    name: str | None
+    description: str | None
+    venue: str | None
+    event_date: datetime | None

@@ -96,6 +96,15 @@ class SeatsRepository(BaseRepository):
             """, ([id.value for id in seat_ids],))
             return cursor.rowcount > 0
 
+    async def mark_seats_as_available(self, seat_ids: list[EntityId]) -> bool:
+        async with self.db_session.cursor() as cursor:
+            await cursor.execute("""
+                UPDATE seats 
+                SET is_available = TRUE 
+                WHERE id = ANY(%s)
+            """, ([id.value for id in seat_ids],))
+            return cursor.rowcount > 0
+
     async def get_available_seats_by_event(self, event_id: EntityId) -> list[Seat]:
         async with self.db_session.cursor() as cursor:
             await cursor.execute(

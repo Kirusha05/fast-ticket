@@ -3,7 +3,7 @@ from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
 from config.db_session import init_db_pool, close_db_pool
 
-from routes.users import router as user_router
+from routes import users_router, events_router, bookings_router
 
 
 @asynccontextmanager
@@ -25,7 +25,9 @@ async def root():
 async def health():
     return {"status": "ok"}
 
-app.include_router(user_router, prefix="/users")
+app.include_router(users_router, prefix="/users")
+app.include_router(events_router, prefix="/events")
+app.include_router(bookings_router, prefix="/bookings")
 
 # CORS middleware
 app.add_middleware(
