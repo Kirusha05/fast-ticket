@@ -10,9 +10,7 @@ class Booking(BaseEntity):
     user_id: EntityId
     event_id: EntityId
     status: str  # confirmed etc.
-
-    # For open_field events
-    ticket_count: int = None
+    ticket_count: int
 
     # Join fields
     booking_seats: list[Seat] = []
@@ -21,6 +19,7 @@ class Booking(BaseEntity):
     updated_at: datetime | None = None
 
 
+# Booking.ticket_count will be derived either from ticket_count or len(sets_ids)
 class CreateBookingRequest(BaseModel):
     event_id: str
     seat_ids: list[str] | None = None

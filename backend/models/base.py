@@ -3,13 +3,7 @@ from typing import ClassVar, Self
 from pydantic import BaseModel, Field, model_serializer
 
 
-class BaseValueObject(BaseModel):
-    class Config:
-        validate_assignment = True
-        frozen = True
-
-
-class EntityId(BaseValueObject):
+class EntityId(BaseModel):
     value: uuid.UUID = Field()
     prefix: str = Field()
 
@@ -48,8 +42,12 @@ class EntityId(BaseValueObject):
     def serializer(self) -> str:
         return str(self)
 
+    class Config:
+        validate_assignment = True
+        frozen = True
 
-class BaseEntity(BaseValueObject):
+
+class BaseEntity(BaseModel):
     entity_id_prefix: ClassVar[str | None] = None
 
     id: EntityId = Field()
@@ -65,3 +63,7 @@ class BaseEntity(BaseValueObject):
         if cls.entity_id_prefix is None:
             raise RuntimeError(f'Please set valid id prefix for the {cls.__name__} model')
         return EntityId.from_uuid(value=id_value, prefix=cls.entity_id_prefix)
+
+    class Config:
+        validate_assignment = True
+        frozen = False

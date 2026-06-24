@@ -63,7 +63,7 @@ class BookingsUseCase:
             user_id=user_id,
             event_id=event.id,
             status="confirmed",
-            ticket_count=None,
+            ticket_count=len(seats),
             booking_seats=seats
         )
         
@@ -119,10 +119,14 @@ class BookingsUseCase:
         
         return created_booking
 
-    async def get_booking(self, booking_id: EntityId) -> Booking:
+    async def get_booking(self, user_id: EntityId, booking_id: EntityId) -> Booking:
         booking = await self._bookings_repository.get_by_id(booking_id)
         if not booking:
             raise HTTPException(status_code=404, detail="Booking not found")
+
+        if booking.user_id.value != user_id.value:
+            raise HTTPException(status_code=403, detail="You are not allowed to view this booking")
+
         return booking
 
     async def list_bookings(self) -> list[Booking]:
@@ -134,23 +138,29 @@ class BookingsUseCase:
     async def list_event_bookings(self, event_id: EntityId) -> list[Booking]:
         return await self._bookings_repository.get_by_event_id(event_id)
 
-    async def cancel_booking(self, booking_id: EntityId) -> Booking:
+    async def cancel_booking(self, user_id: EntityId, booking_id: EntityId) -> Booking:
         booking = await self._bookings_repository.get_by_id(booking_id)
         if not booking:
             raise HTTPException(status_code=404, detail="Booking not found")
+        
+        if booking.user_id.value != user_id.value:
+            raise HTTPException(status_code=403, detail="You are not allowed to cancel this booking")
         
         if booking.status == "cancelled":
             raise HTTPException(status_code=400, detail="Booking already cancelled")
         
         event = await self._events_repository.get_by_id(booking.event_id)
         if not event:
-            raise HTTPException(status_code=404, detail="Event not found")
+            raise HTTPException(status_code=404, detail="Event no longer exists")
         
         if event.event_type == EventType.SEATED:
             seat_ids = [bs.id for bs in booking.booking_seats]
             if seat_ids:
                 await self._seats_repository.mark_seats_as_available(seat_ids)
                 await self._booking_seats_repository.delete_by_booking_id(booking_id)
+                await self._events_repository.increment_available_tickets(
+                    event.id, booking.ticket_count
+                )
         
         elif event.event_type == EventType.OPEN_FIELD:
             if booking.ticket_count:

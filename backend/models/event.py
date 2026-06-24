@@ -27,6 +27,11 @@ class Event(BaseEntity):
     updated_at: datetime | None = None
 
 
+class EventSeatInput(BaseModel):
+    seat_number: str
+    price: float
+
+
 class CreateEventRequest(BaseModel):
     name: str
     description: str
@@ -34,6 +39,7 @@ class CreateEventRequest(BaseModel):
     event_date: datetime
     event_type: EventType
     total_tickets: int | None = None
+    seats: list[EventSeatInput] = []
 
 
 class UpdateEventRequest(BaseModel):

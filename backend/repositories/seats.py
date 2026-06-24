@@ -32,6 +32,24 @@ class SeatsRepository(BaseRepository):
                 return None
             return self._map_db_model_to_entity(db_seat)
 
+    async def create_multiple(self, seats: list[Seat]) -> list[Seat]:
+        # Inserts many seats for an event in a single query.
+        if not seats:
+            return []
+
+        values = [
+            (seat.id.value, seat.event_id.value, seat.seat_number,
+             seat.price, seat.is_available)
+            for seat in seats
+        ]
+
+        async with self.db_session.cursor() as cursor:
+            await cursor.executemany("""
+                INSERT INTO seats (id, event_id, seat_number, price, is_available)
+                VALUES (%s, %s, %s, %s, %s)
+            """, values)
+            return seats
+
     async def get_by_id(self, id: EntityId) -> Seat | None:
         async with self.db_session.cursor() as cursor:
             await cursor.execute("SELECT * FROM seats WHERE id = %s", (id.value,))

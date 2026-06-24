@@ -2,7 +2,7 @@ from fastapi import APIRouter, Depends, status
 from usecases import BookingsUseCase
 from config.db_session import get_db_session
 from routes.deps.auth import get_current_user
-from models import Booking, CreateBookingRequest, User
+from models import Booking, CreateBookingRequest, EntityId, User
 
 
 router = APIRouter()
@@ -17,6 +17,17 @@ async def get_all_bookings(
     return await bookings_use_case.list_user_bookings(user.id)
 
 
+@router.get("/{booking_id}")
+async def get_booking(
+    booking_id: str,
+    db=Depends(get_db_session),
+    user: User = Depends(get_current_user),
+) -> Booking:
+    bookings_use_case = BookingsUseCase(db)
+    booking_id = EntityId.from_string(booking_id)
+    return await bookings_use_case.get_booking(user.id, booking_id)
+
+
 @router.post("/", status_code=status.HTTP_201_CREATED)
 async def create_booking(
     booking: CreateBookingRequest,
@@ -26,3 +37,14 @@ async def create_booking(
     bookings_use_case = BookingsUseCase(db)
     result = await bookings_use_case.create(user.id, booking)
     return result
+
+
+@router.post("/{booking_id}/cancel")
+async def cancel_booking(
+    booking_id: str,
+    db=Depends(get_db_session),
+    user: User = Depends(get_current_user),
+) -> Booking:
+    bookings_use_case = BookingsUseCase(db)
+    booking_id = EntityId.from_string(booking_id)
+    return await bookings_use_case.cancel_booking(user.id, booking_id)

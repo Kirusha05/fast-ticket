@@ -1,0 +1,29 @@
+INSERT INTO seats (
+    id,
+    event_id,
+    seat_number,
+    price,
+    is_available
+)
+VALUES
+(
+    'aaaaaaaa-aaaa-aaaa-aaaa-aaaaaaaaaaaa',
+    '22222222-2222-2222-2222-222222222222',
+    'A1',
+    150.00,
+    TRUE
+),
+(
+    'bbbbbbbb-bbbb-bbbb-bbbb-bbbbbbbbbbbb',
+    '22222222-2222-2222-2222-222222222222',
+    'A2',
+    150.00,
+    TRUE
+),
+(
+    'cccccccc-cccc-cccc-cccc-cccccccccccc',
+    '22222222-2222-2222-2222-222222222222',
+    'B1',
+    120.00,
+    TRUE
+);

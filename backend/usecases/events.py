@@ -1,15 +1,20 @@
 from fastapi import HTTPException
 from psycopg import AsyncConnection
-from repositories import BookingsRepository, EventsRepository
-from models import EntityId, Event, CreateEventRequest, UpdateEventRequest
+from repositories import BookingsRepository, EventsRepository, SeatsRepository
+from models import EntityId, Event, Seat, CreateEventRequest, UpdateEventRequest
 
 class EventsUseCase:
     def __init__(self, db_session: AsyncConnection):
         self.db_session = db_session
         self._bookings_repository = BookingsRepository(db_session)
         self._events_repository = EventsRepository(db_session)
+        self._seats_repository = SeatsRepository(db_session)
 
     async def create(self, event_request: CreateEventRequest) -> Event:
+        total_tickets = event_request.total_tickets
+        if event_request.seats:
+            total_tickets = len(event_request.seats)
+        
         new_event = Event(
             id=Event.generate_entity_id(),
             name=event_request.name,
@@ -17,10 +22,24 @@ class EventsUseCase:
             venue=event_request.venue,
             event_date=event_request.event_date,
             event_type=event_request.event_type,
-            total_tickets=event_request.total_tickets,
-            available_tickets=event_request.total_tickets
+            total_tickets=total_tickets,
+            available_tickets=total_tickets
         )
         created_event = await self._events_repository.create(new_event)
+
+        if event_request.seats:
+            seats = [
+                Seat(
+                    id=Seat.generate_entity_id(),
+                    event_id=created_event.id,
+                    seat_number=seat_input.seat_number,
+                    price=seat_input.price,
+                    is_available=True
+                )
+                for seat_input in event_request.seats
+            ]
+            await self._seats_repository.create_multiple(seats)
+
         return created_event
 
     async def list_events(self) -> list[Event]:

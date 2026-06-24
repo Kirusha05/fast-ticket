@@ -25,7 +25,7 @@ def upgrade() -> None:
         sa.Column('user_id', sa.UUID(as_uuid=True), sa.ForeignKey('users.id', ondelete='CASCADE'), nullable=False),
         sa.Column('event_id', sa.UUID(as_uuid=True), sa.ForeignKey('events.id', ondelete='CASCADE'), nullable=False),
         sa.Column('status', sa.String(length=20), default='confirmed', nullable=False),
-        sa.Column('ticket_count', sa.Integer(), nullable=True),
+        sa.Column('ticket_count', sa.Integer(), nullable=False),
         sa.Column('created_at', sa.DateTime(), server_default=sa.func.now(), nullable=False),
         sa.Column('updated_at', sa.DateTime(), server_default=sa.func.now(), nullable=False)
     )

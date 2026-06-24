@@ -13,7 +13,7 @@ class BookingsRepository(BaseRepository):
             user_id=User.build_entity_id_from_uuid(booking_row['user_id']),
             event_id=Event.build_entity_id_from_uuid(booking_row['event_id']),
             status=booking_row['status'],
-            ticket_count=booking_row.get('ticket_count'),
+            ticket_count=booking_row['ticket_count'],
             booking_seats=seats,
             created_at=booking_row['created_at'],
             updated_at=booking_row['updated_at']
@@ -48,7 +48,7 @@ class BookingsRepository(BaseRepository):
         async with self.db_session.cursor() as cursor:
             await cursor.execute("""
                 SELECT
-                    b.id AS booking_id,
+                    b.id,
                     b.user_id,
                     b.event_id,
                     b.status,
@@ -58,8 +58,7 @@ class BookingsRepository(BaseRepository):
                     s.id AS seat_id,
                     s.seat_number,
                     s.price,
-                    s.is_available,
-                    s.section
+                    s.is_available
                 FROM bookings b
                 LEFT JOIN booking_seats bs ON b.id = bs.booking_id
                 LEFT JOIN seats s ON s.id = bs.seat_id

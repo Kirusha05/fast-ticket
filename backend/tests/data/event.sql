@@ -1,11 +1,11 @@
 INSERT INTO events (
-    id, 
-    name, 
-    description, 
-    venue, 
-    event_date, 
-    event_type, 
-    total_tickets, 
+    id,
+    name,
+    description,
+    venue,
+    event_date,
+    event_type,
+    total_tickets,
     available_tickets
 )
 VALUES (
@@ -17,4 +17,14 @@ VALUES (
     'open_field',
     10000,
     10000
-)
+),
+(
+    '22222222-2222-2222-2222-222222222222',
+    'Opera Night',
+    'O seara de opera clasica',
+    'Ateneul Roman',
+    '2026-06-21',
+    'seated',
+    1000,
+    1000
+);
