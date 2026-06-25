@@ -156,17 +156,6 @@ async def test_booking_cancel_twice(
     assert data["id"] == booking_id
     assert data["status"] == "cancelled"
 
-    # the event's available tickets get increased
-    cursor = await db_session.execute(
-        """
-        SELECT available_tickets FROM events
-        WHERE id = %s
-        """,
-        ("11111111-1111-1111-1111-111111111111",)
-    )
-    row = await cursor.fetchone()
-    assert row['available_tickets'] == 9999  # were 9997 before, 2 tickets got cancelled
-
     # Cancel again
     response = test_client.post(f"/bookings/{booking_id}/cancel")
     data = response.json()

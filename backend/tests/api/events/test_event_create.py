@@ -22,6 +22,7 @@ def test_event_create_with_tickets(test_client: TestClient, db_session: AsyncCon
     assert data["description"] == request["description"]
     assert data["venue"] == request["venue"]
     assert data["event_date"] is not None
+    assert data["event_type"] == "open_field"
     assert data["total_tickets"] == request["total_tickets"]
     assert data["available_tickets"] == request["total_tickets"]
     assert data["created_at"] is not None

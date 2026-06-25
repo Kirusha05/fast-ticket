@@ -26,4 +26,25 @@ VALUES
     'B1',
     120.00,
     TRUE
+),
+(
+    'dddddddd-dddd-dddd-dddd-dddddddddddd',
+    '33333333-3333-3333-3333-333333333333',
+    'A1',
+    200.00,
+    TRUE
+),
+(
+    'eeeeeeee-eeee-eeee-eeee-eeeeeeeeeeee',
+    '33333333-3333-3333-3333-333333333333',
+    'A2',
+    200.00,
+    TRUE
+),
+(
+    'ffffffff-ffff-ffff-ffff-ffffffffffff',
+    '33333333-3333-3333-3333-333333333333',
+    'A3',
+    200.00,
+    TRUE
 );

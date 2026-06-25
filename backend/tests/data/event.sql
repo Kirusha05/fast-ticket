@@ -27,4 +27,14 @@ VALUES (
     'seated',
     1000,
     1000
+),
+(
+    '33333333-3333-3333-3333-333333333333',
+    'Rock Arena',
+    'Concert rock cu trupe internationale',
+    'Sala Palatului',
+    '2026-07-15',
+    'seated',
+    500,
+    500
 );

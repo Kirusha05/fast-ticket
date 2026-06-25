@@ -1,7 +1,7 @@
 from fastapi import HTTPException
 from psycopg import AsyncConnection
 from repositories import BookingsRepository, EventsRepository, SeatsRepository, BookingSeatsRepository
-from models import Booking, EntityId, Event, CreateBookingRequest, EventType
+from models import Booking, EntityId, Event, CreateBookingRequest, EventType, Seat
 
 
 class BookingsUseCase:
@@ -41,7 +41,8 @@ class BookingsUseCase:
         
         if len(seats) != len(seat_ids):
             missing_seat_ids = set(sid.value for sid in seat_ids) - set(s.id.value for s in seats)
-            raise HTTPException(status_code=400, detail=f"Seats not found: {missing_seat_ids}")
+            missing_seat_ids = [str(Seat.build_entity_id_from_uuid(seat_id)) for seat_id in missing_seat_ids]
+            raise HTTPException(status_code=404, detail=f"Seats not found: {", ".join(missing_seat_ids)}")
         
         for seat in seats:
             if seat.event_id.value != event.id.value:
@@ -55,7 +56,7 @@ class BookingsUseCase:
             unavailable_seat_numbers = [s.seat_number for s in unavailable_seats]
             raise HTTPException(
                 status_code=409,
-                detail=f"Seats already taken: {unavailable_seat_numbers}"
+                detail=f"One or more seats are already taken: {', '.join(unavailable_seat_numbers)}"
             )
         
         booking = Booking(
@@ -73,6 +74,9 @@ class BookingsUseCase:
         
         await self._seats_repository.mark_seats_as_unavailable(seat_ids)
         await self._booking_seats_repository.create_multiple(created_booking.id, seat_ids)
+        await self._events_repository.decrement_available_tickets(
+            event.id, booking.ticket_count
+        )
         
         final_booking = await self._bookings_repository.get_by_id(created_booking.id)
         return final_booking
