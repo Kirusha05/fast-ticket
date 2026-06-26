@@ -4,17 +4,25 @@ import json
 
 
 def test_event_create_with_tickets(test_client: TestClient, db_session: AsyncConnection):
+    """
+    Setup: empty database.
+    POST a new open_field event Summerfest with 1 tier (General, $50, 10000 tickets).
+    Event created with total_tickets=10000, available_tickets=10000.
+    """
     request = {
         "name": "Summerfest",
         "description": "Cel mai tare festival al verii",
         "venue": "Gradina Botanica",
         "event_date": "2026-06-21",
         "event_type": "open_field",
-        "total_tickets": 10000
+        "tiers": [
+            {"name": "General", "price": 50.0, "total_tickets": 10000}
+        ]
     }
 
     response = test_client.post("/events/", json=request)
     data = response.json()
+    print(json.dumps(data, indent=2))
 
     assert response.status_code == 201
     assert data["id"] is not None
@@ -23,13 +31,18 @@ def test_event_create_with_tickets(test_client: TestClient, db_session: AsyncCon
     assert data["venue"] == request["venue"]
     assert data["event_date"] is not None
     assert data["event_type"] == "open_field"
-    assert data["total_tickets"] == request["total_tickets"]
-    assert data["available_tickets"] == request["total_tickets"]
+    assert data["total_tickets"] == 10000
+    assert data["available_tickets"] == 10000
     assert data["created_at"] is not None
     assert data["updated_at"] is not None
 
 
 async def test_event_create_with_seats(test_client: TestClient, db_session: AsyncConnection):
+    """
+    Setup: empty database.
+    POST a new seated event Opera Night with 3 seats (A1=$150, A2=$150, B1=$120).
+    Event created with total_tickets=3. All 3 seats persisted in event_seats.
+    """
     request = {
         "name": "Opera Night",
         "description": "O seara de opera clasica",
@@ -57,7 +70,7 @@ async def test_event_create_with_seats(test_client: TestClient, db_session: Asyn
 
     # verify all seats were inserted and tied to the created event
     cursor = await db_session.execute(
-        "SELECT seat_number, price FROM seats WHERE event_id = %s ORDER BY seat_number",
+        "SELECT seat_number, price FROM event_seats WHERE event_id = %s ORDER BY seat_number",
         (event_id.removeprefix("e-"),)
     )
     rows = await cursor.fetchall()
@@ -67,6 +80,11 @@ async def test_event_create_with_seats(test_client: TestClient, db_session: Asyn
 
 
 def test_event_create_without_tickets(test_client: TestClient, db_session: AsyncConnection):
+    """
+    Setup: empty database.
+    POST an open_field event without providing any tiers -> reject with 422
+    (Pydantic model_validator enforces that open_field events require tiers).
+    """
     request = {
         "name": "Summerfest",
         "description": "Cel mai tare festival al verii",
@@ -78,13 +96,7 @@ def test_event_create_without_tickets(test_client: TestClient, db_session: Async
     response = test_client.post("/events/", json=request)
     data = response.json()
 
-    assert response.status_code == 201
-    assert data["id"] is not None
-    assert data["name"] == request["name"]
-    assert data["description"] == request["description"]
-    assert data["venue"] == request["venue"]
-    assert data["event_date"] is not None
-    assert not data["total_tickets"]
-    assert not data["available_tickets"]
-    assert data["created_at"] is not None
-    assert data["updated_at"] is not None
+    # 422 comes from Pydantic's model_validator in CreateEventRequest
+    # the request never reaches the use case
+    assert response.status_code == 422
+    assert "Open field events require tiers" in str(data["detail"])

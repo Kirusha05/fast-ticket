@@ -8,6 +8,9 @@ from psycopg_pool import AsyncConnectionPool
 from config.config import config
 from routes.deps.auth import get_current_user
 
+# run tests with this:
+# MODE=test uv run pytest -v
+
 # scopes:
 # session -> package -> module -> class -> function
 
@@ -48,11 +51,13 @@ async def db_session(db_pool: AsyncConnectionPool) -> AsyncConnection:
 
         # delete all data from the tables for cleanup
         models = [
-            "users",
-            "booking_seats",
-            "seats",
+            "booking_tiered_tickets",
+            "booking_seated_tickets",
+            "event_tiers",
+            "event_seats",
             "bookings",
-            "events"
+            "events",
+            "users"
         ]
         for model in models:
             await conn.execute(f"DELETE FROM {model}")

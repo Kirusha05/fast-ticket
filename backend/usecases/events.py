@@ -1,20 +1,24 @@
 from fastapi import HTTPException
 from psycopg import AsyncConnection
-from repositories import BookingsRepository, EventsRepository, SeatsRepository
-from models import EntityId, Event, Seat, CreateEventRequest, UpdateEventRequest
+from repositories import EventsRepository, EventSeatsRepository, EventTiersRepository
+from models import EntityId, Event, EventSeat, EventTier, CreateEventRequest, UpdateEventRequest, EventType
+
 
 class EventsUseCase:
     def __init__(self, db_session: AsyncConnection):
         self.db_session = db_session
-        self._bookings_repository = BookingsRepository(db_session)
         self._events_repository = EventsRepository(db_session)
-        self._seats_repository = SeatsRepository(db_session)
+        self._event_seats_repository = EventSeatsRepository(db_session)
+        self._event_tiers_repository = EventTiersRepository(db_session)
 
     async def create(self, event_request: CreateEventRequest) -> Event:
-        total_tickets = event_request.total_tickets
-        if event_request.seats:
+        if event_request.event_type == EventType.SEATED:
             total_tickets = len(event_request.seats)
-        
+        elif event_request.event_type == EventType.OPEN_FIELD:
+            total_tickets = sum(t.total_tickets for t in event_request.tiers)
+        else:
+            raise HTTPException(status_code=400, detail=f"Unknown event type: {event_request.event_type}")
+
         new_event = Event(
             id=Event.generate_entity_id(),
             name=event_request.name,
@@ -29,8 +33,8 @@ class EventsUseCase:
 
         if event_request.seats:
             seats = [
-                Seat(
-                    id=Seat.generate_entity_id(),
+                EventSeat(
+                    id=EventSeat.generate_entity_id(),
                     event_id=created_event.id,
                     seat_number=seat_input.seat_number,
                     price=seat_input.price,
@@ -38,12 +42,26 @@ class EventsUseCase:
                 )
                 for seat_input in event_request.seats
             ]
-            await self._seats_repository.create_multiple(seats)
+            await self._event_seats_repository.create_multiple(seats)
+
+        if event_request.tiers:
+            tiers = [
+                EventTier(
+                    id=EventTier.generate_entity_id(),
+                    event_id=created_event.id,
+                    name=tier_input.name,
+                    price=tier_input.price,
+                    total_tickets=tier_input.total_tickets,
+                    available_tickets=tier_input.total_tickets
+                )
+                for tier_input in event_request.tiers
+            ]
+            await self._event_tiers_repository.create_multiple(tiers)
 
         return created_event
 
-    async def list_events(self) -> list[Event]:
-        events = await self._events_repository.get_all()
+    async def list_events(self, event_type: EventType | None = None) -> list[Event]:
+        events = await self._events_repository.get_all(event_type)
         return events
 
     async def update_event(self, event_id: EntityId, event_request: UpdateEventRequest) -> Event:

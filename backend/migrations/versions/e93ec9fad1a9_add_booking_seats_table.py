@@ -20,9 +20,9 @@ depends_on: Union[str, Sequence[str], None] = None
 
 def upgrade() -> None:
     op.create_table(
-        'booking_seats',
+        'booking_seated_tickets',
         sa.Column('booking_id', sa.UUID(as_uuid=True), sa.ForeignKey('bookings.id', ondelete='CASCADE'), nullable=False),
-        sa.Column('seat_id', sa.UUID(as_uuid=True), sa.ForeignKey('seats.id', ondelete='CASCADE'), nullable=False),
+        sa.Column('seat_id', sa.UUID(as_uuid=True), sa.ForeignKey('event_seats.id', ondelete='CASCADE'), nullable=False),
         sa.Column('created_at', sa.DateTime(), server_default=sa.func.now(), nullable=False),
         sa.Column('updated_at', sa.DateTime(), server_default=sa.func.now(), nullable=False),
         # Pure join table, so just use a composite primary key
@@ -31,4 +31,4 @@ def upgrade() -> None:
 
 
 def downgrade() -> None:
-    op.drop_table('booking_seats')
+    op.drop_table('booking_seated_tickets')

@@ -6,12 +6,40 @@ import json
 async def test_booking_cancel_seated(
     test_client: TestClient, db_session: AsyncConnection, override_current_user_dummy
 ):
-    # Insert test data: two users, events, seats and three bookings
+    """
+    Setup:
+      Users:
+        - User 1 (u-11111111-...), "Test User"
+        - User 2 (u-22222222-...), "Second User"
+
+      Events:
+        - Summerfest (e-11111111-...), open_field, 10000 total/available
+        - Opera Night (e-22222222-...), seated, 1000 available (took 2 -> 998)
+        - Rock Arena (e-33333333-...), seated, 500 total/available
+
+      Tiers (for Summerfest):
+        - General (et-77777777-...), $50, 9997 available (was 10000, 3 taken)
+
+      Seats (Opera Night):
+        - A1 (es-aaaa...), $150, is_available = FALSE  <- taken by booking #2
+        - A2 (es-bbbb...), $150, is_available = FALSE  <- taken by booking #2
+        - B1 (es-cccc...), $120, is_available = TRUE
+
+      Pre-existing bookings (all confirmed):
+        #1 (b-10000000-...-001): User 1, Summerfest, 2x General @ $50 = $100
+        #2 (b-10000000-...-002): User 1, Opera Night, A1+A2 @ $150 ea = $300
+        #3 (b-10000000-...-003): User 2, Summerfest, 1x General @ $50
+
+    Logged in as User 1.
+    Cancel booking #2 (seated - A1 & A2 on Opera Night).
+    """
     with open('tests/data/user.sql') as f:
         await db_session.execute(f.read())
     with open('tests/data/event.sql') as f:
         await db_session.execute(f.read())
     with open('tests/data/seats.sql') as f:
+        await db_session.execute(f.read())
+    with open('tests/data/tiers.sql') as f:
         await db_session.execute(f.read())
     with open('tests/data/booking.sql') as f:
         await db_session.execute(f.read())
@@ -31,7 +59,7 @@ async def test_booking_cancel_seated(
 
     # the two seats held by the booking are available again
     cursor = await db_session.execute(
-        "SELECT seat_number, is_available FROM seats "
+        "SELECT seat_number, is_available FROM event_seats "
         "WHERE id = ANY(%s) ORDER BY seat_number",
         ([
             "aaaaaaaa-aaaa-aaaa-aaaa-aaaaaaaaaaaa",
@@ -42,9 +70,9 @@ async def test_booking_cancel_seated(
     assert [r["seat_number"] for r in rows] == ["A1", "A2"]
     assert all(r["is_available"] is True for r in rows)
 
-    # the booking_seats rows for the cancelled booking are gone
+    # the booking_seated_tickets rows for the cancelled booking are gone
     cursor = await db_session.execute(
-        "SELECT COUNT(*) AS count FROM booking_seats WHERE booking_id = %s",
+        "SELECT COUNT(*) AS count FROM booking_seated_tickets WHERE booking_id = %s",
         ("10000000-0000-0000-0000-000000000002",)
     )
     row = await cursor.fetchone()
@@ -52,10 +80,7 @@ async def test_booking_cancel_seated(
 
     # the event's available tickets get increased
     cursor = await db_session.execute(
-        """
-        SELECT available_tickets FROM events
-        WHERE id = %s
-        """,
+        "SELECT available_tickets FROM events WHERE id = %s",
         ("22222222-2222-2222-2222-222222222222",)
     )
     row = await cursor.fetchone()
@@ -65,12 +90,35 @@ async def test_booking_cancel_seated(
 async def test_booking_cancel_open_field(
     test_client: TestClient, db_session: AsyncConnection, override_current_user_dummy
 ):
-    # Insert test data: two users, events, seats and three bookings
+    """
+    Setup:
+      Users:
+        - User 1 (u-11111111-...), "Test User"
+        - User 2 (u-22222222-...), "Second User"
+
+      Events:
+        - Summerfest (e-11111111-...), open_field, 9997 available (was 10000, 3 taken)
+        - Opera Night (e-22222222-...), seated, 998 available (was 1000, 2 taken)
+        - Rock Arena (e-33333333-...), seated, 500 total/available
+
+      Tiers (for Summerfest):
+        - General (et-77777777-...), $50, 9997 available (was 10000, 3 taken)
+
+      Pre-existing bookings (all confirmed):
+        #1 (b-10000000-...-001): User 1, Summerfest, 2x General @ $50 = $100
+        #2 (b-10000000-...-002): User 1, Opera Night, A1+A2 @ $150 ea = $300
+        #3 (b-10000000-...-003): User 2, Summerfest, 1x General @ $50
+
+    Logged in as User 1.
+    Cancel booking #1 (open-field - 2 General tickets on Summerfest).
+    """
     with open('tests/data/user.sql') as f:
         await db_session.execute(f.read())
     with open('tests/data/event.sql') as f:
         await db_session.execute(f.read())
     with open('tests/data/seats.sql') as f:
+        await db_session.execute(f.read())
+    with open('tests/data/tiers.sql') as f:
         await db_session.execute(f.read())
     with open('tests/data/booking.sql') as f:
         await db_session.execute(f.read())
@@ -91,25 +139,61 @@ async def test_booking_cancel_open_field(
 
     # the event's available tickets get increased
     cursor = await db_session.execute(
-        """
-        SELECT available_tickets FROM events
-        WHERE id = %s
-        """,
+        "SELECT available_tickets FROM events WHERE id = %s",
         ("11111111-1111-1111-1111-111111111111",)
     )
     row = await cursor.fetchone()
     assert row['available_tickets'] == 9999  # were 9997 before, 2 tickets got cancelled
 
+    # the tier's available tickets get increased
+    cursor = await db_session.execute(
+        "SELECT available_tickets FROM event_tiers WHERE id = %s",
+        ("77777777-7777-7777-7777-777777777777",)
+    )
+    row = await cursor.fetchone()
+    assert row['available_tickets'] == 9999  # were 9997 before, 2 tickets got cancelled
+
+    # the booking_tiered_tickets rows for the cancelled booking are gone
+    cursor = await db_session.execute(
+        "SELECT COUNT(*) AS count FROM booking_tiered_tickets WHERE booking_id = %s",
+        ("10000000-0000-0000-0000-000000000001",)
+    )
+    row = await cursor.fetchone()
+    assert row["count"] == 0
+
 
 async def test_booking_cancel_open_field_not_own(
     test_client: TestClient, db_session: AsyncConnection, override_current_user_dummy
 ):
-    # Insert test data: two users, events, seats and three bookings
+    """
+    Setup:
+      Users:
+        - User 1 (u-11111111-...), "Test User"
+        - User 2 (u-22222222-...), "Second User"
+
+      Events:
+        - Summerfest (e-11111111-...), open_field, 9997 available (was 10000, 3 taken)
+        - Opera Night (e-22222222-...), seated, 998 available (was 1000, 2 taken)
+        - Rock Arena (e-33333333-...), seated, 500 total/available
+
+      Tiers (for Summerfest):
+        - General (et-77777777-...), $50, 9997 available (was 10000, 3 taken)
+
+      Pre-existing bookings (all confirmed):
+        #1 (b-10000000-...-001): User 1, Summerfest, 2x General @ $50 = $100
+        #2 (b-10000000-...-002): User 1, Opera Night, A1+A2 @ $150 ea = $300
+        #3 (b-10000000-...-003): User 2, Summerfest, 1x General @ $50
+
+    Logged in as User 1.
+    Try to cancel booking #3 which belongs to User 2 -> reject with 403.
+    """
     with open('tests/data/user.sql') as f:
         await db_session.execute(f.read())
     with open('tests/data/event.sql') as f:
         await db_session.execute(f.read())
     with open('tests/data/seats.sql') as f:
+        await db_session.execute(f.read())
+    with open('tests/data/tiers.sql') as f:
         await db_session.execute(f.read())
     with open('tests/data/booking.sql') as f:
         await db_session.execute(f.read())
@@ -128,16 +212,38 @@ async def test_booking_cancel_open_field_not_own(
     assert data['detail'] == "You are not allowed to cancel this booking"
 
 
-
 async def test_booking_cancel_twice(
     test_client: TestClient, db_session: AsyncConnection, override_current_user_dummy
 ):
-    # Insert test data: two users, events, seats and three bookings
+    """
+    Setup:
+      Users:
+        - User 1 (u-11111111-...), "Test User"
+        - User 2 (u-22222222-...), "Second User"
+
+      Events:
+        - Summerfest (e-11111111-...), open_field, 9997 available (was 10000, 3 taken)
+        - Opera Night (e-22222222-...), seated, 998 available (was 1000, 2 taken)
+        - Rock Arena (e-33333333-...), seated, 500 total/available
+
+      Tiers (for Summerfest):
+        - General (et-77777777-...), $50, 9997 available (was 10000, 3 taken)
+
+      Pre-existing bookings (all confirmed):
+        #1 (b-10000000-...-001): User 1, Summerfest, 2x General @ $50 = $100
+        #2 (b-10000000-...-002): User 1, Opera Night, A1+A2 @ $150 ea = $300
+        #3 (b-10000000-...-003): User 2, Summerfest, 1x General @ $50
+
+    Logged in as User 1.
+    Cancel booking #1 once (succeeds), then cancel again -> reject with 400.
+    """
     with open('tests/data/user.sql') as f:
         await db_session.execute(f.read())
     with open('tests/data/event.sql') as f:
         await db_session.execute(f.read())
     with open('tests/data/seats.sql') as f:
+        await db_session.execute(f.read())
+    with open('tests/data/tiers.sql') as f:
         await db_session.execute(f.read())
     with open('tests/data/booking.sql') as f:
         await db_session.execute(f.read())
@@ -163,4 +269,3 @@ async def test_booking_cancel_twice(
 
     assert response.status_code == 400
     assert data['detail'] == "Booking already cancelled"
-

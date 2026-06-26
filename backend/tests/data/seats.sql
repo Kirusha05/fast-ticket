@@ -1,4 +1,4 @@
-INSERT INTO seats (
+INSERT INTO event_seats (
     id,
     event_id,
     seat_number,

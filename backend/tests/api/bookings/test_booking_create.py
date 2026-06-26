@@ -4,20 +4,41 @@ import json
 
 
 async def test_booking_create_open_field(test_client: TestClient, db_session: AsyncConnection, override_current_user_dummy):
-    # Insert test data
+    """
+    Setup:
+      Users:
+        - User 1 (u-11111111-...), "Test User"
+
+      Events:
+        - Summerfest (e-11111111-...), open_field, 10000 total/available
+        - Opera Night (e-22222222-...), seated, 1000 total/available
+        - Rock Arena (e-33333333-...), seated, 500 total/available
+
+      Tiers (for Summerfest):
+        - General (et-77777777-...), $50, 10000 total/available
+
+    Logged in as User 1.
+    Book 2x General tickets on Summerfest -> booking created with 2 tiered_tickets at $50 ea = $100.
+    Event and tier available_tickets decremented from 10000 -> 9998.
+    """
     with open('tests/data/user.sql') as f:
         await db_session.execute(f.read())
     with open('tests/data/event.sql') as f:
+        await db_session.execute(f.read())
+    with open('tests/data/tiers.sql') as f:
         await db_session.execute(f.read())
         await db_session.commit()
 
     override_current_user_dummy()  # bypass authorization
     user_id = "u-11111111-1111-1111-1111-111111111111"
     event_id = "e-11111111-1111-1111-1111-111111111111"
+    tier_id = "et-77777777-7777-7777-7777-777777777777"
 
     request = {
         "event_id": event_id,
-        "ticket_count": 2
+        "tiered_tickets": [
+            {"tier_id": tier_id, "count": 2}
+        ]
     }
 
     response = test_client.post("/bookings/", json=request)
@@ -30,23 +51,52 @@ async def test_booking_create_open_field(test_client: TestClient, db_session: As
     assert data["event_id"] == event_id
     assert data["status"] == "confirmed"
     assert data["ticket_count"] == 2
-    assert len(data["booking_seats"]) == 0
+    assert data["total_price"] == 100.0
+    assert len(data["seated_tickets"]) == 0
+    assert len(data["tiered_tickets"]) == 2
+    for tt in data["tiered_tickets"]:
+        assert tt["unit_price"] == 50.0
+        assert tt["ticket_tier_id"] == tier_id
     assert data["created_at"] is not None
     assert data["updated_at"] is not None
 
+    # event available_tickets was decremented (denormalized counter)
     cursor = await db_session.execute(
-        """
-        SELECT available_tickets FROM events
-        WHERE id = %s
-        """,
+        "SELECT available_tickets FROM events WHERE id = %s",
         (event_id.removeprefix('e-'),)
+    )
+    row = await cursor.fetchone()
+    assert row['available_tickets'] == 9998
+
+    # tier available_tickets was decremented (authoritative counter)
+    cursor = await db_session.execute(
+        "SELECT available_tickets FROM event_tiers WHERE id = %s",
+        ("77777777-7777-7777-7777-777777777777",)
     )
     row = await cursor.fetchone()
     assert row['available_tickets'] == 9998
 
 
 async def test_booking_create_seated(test_client: TestClient, db_session: AsyncConnection, override_current_user_dummy):
-    # Insert test data: user, seated event and its seats
+    """
+    Setup:
+      Users:
+        - User 1 (u-11111111-...), "Test User"
+
+      Events:
+        - Summerfest (e-11111111-...), open_field, 10000 total/available
+        - Opera Night (e-22222222-...), seated, 1000 total/available
+        - Rock Arena (e-33333333-...), seated, 500 total/available
+
+      Seats (Opera Night):
+        - A1 (es-aaaa...), $150, available
+        - A2 (es-bbbb...), $150, available
+        - B1 (es-cccc...), $120, available
+
+    Logged in as User 1.
+    Book seats A1 + A2 on Opera Night -> booking with 2 seated_tickets @ $150 ea = $300.
+    Seats marked unavailable. Event available_tickets decremented from 1000 -> 998.
+    """
     with open('tests/data/user.sql') as f:
         await db_session.execute(f.read())
     with open('tests/data/event.sql') as f:
@@ -59,8 +109,8 @@ async def test_booking_create_seated(test_client: TestClient, db_session: AsyncC
     user_id = "u-11111111-1111-1111-1111-111111111111"
     event_id = "e-22222222-2222-2222-2222-222222222222"
     seat_ids = [
-        "s-aaaaaaaa-aaaa-aaaa-aaaa-aaaaaaaaaaaa",
-        "s-bbbbbbbb-bbbb-bbbb-bbbb-bbbbbbbbbbbb"
+        "es-aaaaaaaa-aaaa-aaaa-aaaa-aaaaaaaaaaaa",
+        "es-bbbbbbbb-bbbb-bbbb-bbbb-bbbbbbbbbbbb"
     ]
 
     request = {
@@ -78,29 +128,27 @@ async def test_booking_create_seated(test_client: TestClient, db_session: AsyncC
     assert data["event_id"] == event_id
     assert data["status"] == "confirmed"
     assert data["ticket_count"] == 2
-    assert len(data["booking_seats"]) == 2
+    assert data["total_price"] == 300.0
+    assert len(data["seated_tickets"]) == 2
     assert data["created_at"] is not None
     assert data["updated_at"] is not None
 
     # the two booked seats are returned on the booking
-    booked = {s["seat_number"] for s in data["booking_seats"]}
+    booked = {s["seat_number"] for s in data["seated_tickets"]}
     assert booked == {"A1", "A2"}
 
     # and persisted as unavailable in the DB
     cursor = await db_session.execute(
-        "SELECT seat_number, is_available FROM seats "
+        "SELECT seat_number, is_available FROM event_seats "
         "WHERE id = ANY(%s) ORDER BY seat_number",
-        ([seat_id.removeprefix("s-") for seat_id in seat_ids],)
+        ([seat_id.removeprefix("es-") for seat_id in seat_ids],)
     )
     rows = await cursor.fetchall()
     assert [r["seat_number"] for r in rows] == ["A1", "A2"]
     assert all(r["is_available"] is False for r in rows)
 
     cursor = await db_session.execute(
-        """
-        SELECT available_tickets FROM events
-        WHERE id = %s
-        """,
+        "SELECT available_tickets FROM events WHERE id = %s",
         (event_id.removeprefix('e-'),)
     )
     row = await cursor.fetchone()
@@ -110,7 +158,28 @@ async def test_booking_create_seated(test_client: TestClient, db_session: AsyncC
 async def test_booking_create_seated_wrong_event_seats(
     test_client: TestClient, db_session: AsyncConnection, override_current_user_dummy
 ):
-    # Insert test data: user, events (including the new Rock Arena) and seats
+    """
+    Setup:
+      Users:
+        - User 1 (u-11111111-...), "Test User"
+
+      Events:
+        - Summerfest (e-11111111-...), open_field, 10000 total/available
+        - Opera Night (e-22222222-...), seated, 1000 total/available
+        - Rock Arena (e-33333333-...), seated, 500 total/available
+
+      Seats (Opera Night):
+        - A1 (es-aaaa...), $150, available
+        - A2 (es-bbbb...), $150, available
+        - B1 (es-cccc...), $120, available
+      Seats (Rock Arena):
+        - A1 (es-dddd...), $200, available
+        - A2 (es-eeee...), $200, available
+        - A3 (es-ffff...), $200, available
+
+    Logged in as User 1.
+    Request booking on Opera Night but pass Rock Arena seats -> reject with 400.
+    """
     with open('tests/data/user.sql') as f:
         await db_session.execute(f.read())
     with open('tests/data/event.sql') as f:
@@ -124,8 +193,8 @@ async def test_booking_create_seated_wrong_event_seats(
     # Request booking on Opera Night, but pass seats that belong to Rock Arena
     event_id = "e-22222222-2222-2222-2222-222222222222"
     seat_ids = [
-        "s-dddddddd-dddd-dddd-dddd-dddddddddddd",  # Rock Arena, A1
-        "s-eeeeeeee-eeee-eeee-eeee-eeeeeeeeeeee",  # Rock Arena, A2
+        "es-dddddddd-dddd-dddd-dddd-dddddddddddd",  # Rock Arena, A1
+        "es-eeeeeeee-eeee-eeee-eeee-eeeeeeeeeeee",  # Rock Arena, A2
     ]
 
     request = {
@@ -143,7 +212,24 @@ async def test_booking_create_seated_wrong_event_seats(
 async def test_booking_create_seated_nonexistent_seats(
     test_client: TestClient, db_session: AsyncConnection, override_current_user_dummy
 ):
-    # Insert test data: user, events and seats
+    """
+    Setup:
+      Users:
+        - User 1 (u-11111111-...), "Test User"
+
+      Events:
+        - Summerfest (e-11111111-...), open_field, 10000 total/available
+        - Opera Night (e-22222222-...), seated, 1000 total/available
+        - Rock Arena (e-33333333-...), seated, 500 total/available
+
+      Seats (Opera Night):
+        - A1 (es-aaaa...), $150, available
+        - A2 (es-bbbb...), $150, available
+        - B1 (es-cccc...), $120, available
+
+    Logged in as User 1.
+    Request booking on Opera Night with one real seat (A1) and one nonexistent seat UUID -> reject with 404.
+    """
     with open('tests/data/user.sql') as f:
         await db_session.execute(f.read())
     with open('tests/data/event.sql') as f:
@@ -157,8 +243,8 @@ async def test_booking_create_seated_nonexistent_seats(
     # Request booking with one real seat and one nonexistent seat ID
     event_id = "e-22222222-2222-2222-2222-222222222222"
     seat_ids = [
-        "s-aaaaaaaa-aaaa-aaaa-aaaa-aaaaaaaaaaaa",  # exists on Opera Night
-        "s-00000000-0000-0000-0000-000000000000",  # does not exist
+        "es-aaaaaaaa-aaaa-aaaa-aaaa-aaaaaaaaaaaa",  # exists on Opera Night
+        "es-00000000-0000-0000-0000-000000000000",  # does not exist
     ]
 
     request = {
@@ -177,12 +263,40 @@ async def test_booking_create_seated_nonexistent_seats(
 async def test_booking_create_seated_seat_already_taken(
     test_client: TestClient, db_session: AsyncConnection, override_current_user_dummy
 ):
-    # Insert test data: user, events, seats, and pre-existing booking that takes seats A1 & A2
+    """
+    Setup:
+      Users:
+        - User 1 (u-11111111-...), "Test User"
+        - User 2 (u-22222222-...), "Second User"
+
+      Events:
+        - Summerfest (e-11111111-...), open_field, 9997 available (was 10000, 3 taken)
+        - Opera Night (e-22222222-...), seated, 998 available (was 1000, 2 taken)
+        - Rock Arena (e-33333333-...), seated, 500 total/available
+
+      Tiers (for Summerfest):
+        - General (et-77777777-...), $50, 9997 available (was 10000, 3 taken)
+
+      Seats (Opera Night):
+        - A1 (es-aaaa...), $150, is_available = FALSE  <- taken by booking #2
+        - A2 (es-bbbb...), $150, is_available = FALSE  <- taken by booking #2
+        - B1 (es-cccc...), $120, is_available = TRUE
+
+      Pre-existing bookings (all confirmed):
+        #1 (b-10000000-...-001): User 1, Summerfest, 2x General @ $50 = $100
+        #2 (b-10000000-...-002): User 1, Opera Night, A1+A2 @ $150 ea = $300
+        #3 (b-10000000-...-003): User 2, Summerfest, 1x General @ $50
+
+    Logged in as User 1.
+    Try to book A2 (already taken) + B1 (free) -> reject with 409, listing the taken seat A2.
+    """
     with open('tests/data/user.sql') as f:
         await db_session.execute(f.read())
     with open('tests/data/event.sql') as f:
         await db_session.execute(f.read())
     with open('tests/data/seats.sql') as f:
+        await db_session.execute(f.read())
+    with open('tests/data/tiers.sql') as f:
         await db_session.execute(f.read())
     with open('tests/data/booking.sql') as f:
         await db_session.execute(f.read())
@@ -193,8 +307,8 @@ async def test_booking_create_seated_seat_already_taken(
     # Try to book seat A2 (already taken by the pre-loaded booking) and B1 (still free)
     event_id = "e-22222222-2222-2222-2222-222222222222"
     seat_ids = [
-        "s-bbbbbbbb-bbbb-bbbb-bbbb-bbbbbbbbbbbb",  # A2 — already taken
-        "s-cccccccc-cccc-cccc-cccc-cccccccccccc",  # B1 — still free
+        "es-bbbbbbbb-bbbb-bbbb-bbbb-bbbbbbbbbbbb",  # A2 — already taken
+        "es-cccccccc-cccc-cccc-cccc-cccccccccccc",  # B1 — still free
     ]
 
     request = {
@@ -213,24 +327,44 @@ async def test_booking_create_seated_seat_already_taken(
 async def test_booking_create_open_field_zero_tickets(
     test_client: TestClient, db_session: AsyncConnection, override_current_user_dummy
 ):
-    # Insert test data
+    """
+    Setup:
+      Users:
+        - User 1 (u-11111111-...), "Test User"
+
+      Events:
+        - Summerfest (e-11111111-...), open_field, 10000 total/available
+        - Opera Night (e-22222222-...), seated, 1000 total/available
+        - Rock Arena (e-33333333-...), seated, 500 total/available
+
+      Tiers (for Summerfest):
+        - General (et-77777777-...), $50, 10000 total/available
+
+    Logged in as User 1.
+    Request booking with count=0 -> reject with 422 (Pydantic model_validator).
+    """
     with open('tests/data/user.sql') as f:
         await db_session.execute(f.read())
     with open('tests/data/event.sql') as f:
+        await db_session.execute(f.read())
+    with open('tests/data/tiers.sql') as f:
         await db_session.execute(f.read())
         await db_session.commit()
 
     override_current_user_dummy()  # bypass authorization
     event_id = "e-11111111-1111-1111-1111-111111111111"
+    tier_id = "et-77777777-7777-7777-7777-777777777777"
 
     request = {
         "event_id": event_id,
-        "ticket_count": 0
+        "tiered_tickets": [
+            {"tier_id": tier_id, "count": 0}
+        ]
     }
 
     response = test_client.post("/bookings/", json=request)
     data = response.json()
     print(json.dumps(data, indent=2))
 
-    assert response.status_code == 400
-    assert data["detail"] == "Ticket count must be at least 1"
+    assert response.status_code == 422
+    assert "Ticket count must be at least 1" in str(data["detail"])

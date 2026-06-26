@@ -4,8 +4,8 @@ from typing import ClassVar
 from datetime import datetime
 
 
-class Seat(BaseEntity):
-    entity_id_prefix: ClassVar[str] = 's'
+class EventSeat(BaseEntity):
+    entity_id_prefix: ClassVar[str] = 'es'
 
     event_id: EntityId
     seat_number: str
@@ -16,7 +16,7 @@ class Seat(BaseEntity):
     updated_at: datetime | None = None
 
 
-class CreateSeatRequest(BaseModel):
+class CreateEventSeatRequest(BaseModel):
     event_id: str
     seat_number: str
     price: float

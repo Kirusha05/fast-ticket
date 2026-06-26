@@ -1,13 +1,14 @@
 from repositories.base import BaseRepository
 from psycopg import AsyncConnection
-from models import Event, EntityId
+from models import Event, EntityId, EventTier, EventSeat, EventType
 
 
 class EventsRepository(BaseRepository):
     def __init__(self, db_session: AsyncConnection):
         super().__init__(db_session)
 
-    def _map_db_model_to_entity(self, data: dict) -> Event:
+    def _map_db_model_to_entity(self, data: dict, seats: list[EventSeat] | None = None,
+                                tiers: list[EventTier] | None = None) -> Event:
         return Event(
             id=Event.build_entity_id_from_uuid(data['id']),
             name=data['name'],
@@ -17,8 +18,33 @@ class EventsRepository(BaseRepository):
             event_type=data['event_type'],
             total_tickets=data.get('total_tickets'),
             available_tickets=data.get('available_tickets'),
+            seats=seats or [],
+            tiers=tiers or [],
             created_at=data['created_at'],
             updated_at=data['updated_at']
+        )
+
+    def _map_seat_row(self, data: dict) -> EventSeat:
+        return EventSeat(
+            id=EventSeat.build_entity_id_from_uuid(data['seat_id']),
+            event_id=Event.build_entity_id_from_uuid(data['id']),
+            seat_number=data['seat_number'],
+            price=float(data['seat_price']),
+            is_available=data['seat_is_available'],
+            created_at=data['seat_created_at'],
+            updated_at=data['seat_updated_at']
+        )
+
+    def _map_tier_row(self, data: dict) -> EventTier:
+        return EventTier(
+            id=EventTier.build_entity_id_from_uuid(data['tier_id']),
+            event_id=Event.build_entity_id_from_uuid(data['id']),
+            name=data['tier_name'],
+            price=float(data['tier_price']),
+            total_tickets=data['tier_total_tickets'],
+            available_tickets=data['tier_available_tickets'],
+            created_at=data['tier_created_at'],
+            updated_at=data['tier_updated_at']
         )
 
     async def create(self, event: Event) -> Event | None:
@@ -38,15 +64,53 @@ class EventsRepository(BaseRepository):
 
     async def get_by_id(self, id: EntityId) -> Event | None:
         async with self.db_session.cursor() as cursor:
-            await cursor.execute("SELECT * FROM events WHERE id = %s", (id.value,))
-            db_event = await cursor.fetchone()
-            if not db_event:
+            await cursor.execute("""
+                SELECT
+                    e.*,
+                    es.id AS seat_id,
+                    es.seat_number,
+                    es.price AS seat_price,
+                    es.is_available AS seat_is_available,
+                    es.created_at AS seat_created_at,
+                    es.updated_at AS seat_updated_at,
+                    et.id AS tier_id,
+                    et.name AS tier_name,
+                    et.price AS tier_price,
+                    et.total_tickets AS tier_total_tickets,
+                    et.available_tickets AS tier_available_tickets,
+                    et.created_at AS tier_created_at,
+                    et.updated_at AS tier_updated_at
+                FROM events e
+                LEFT JOIN event_seats es ON e.id = es.event_id
+                LEFT JOIN event_tiers et ON e.id = et.event_id
+                WHERE e.id = %s
+            """, (id.value,))
+            rows = await cursor.fetchall()
+            if not rows:
                 return None
-            return self._map_db_model_to_entity(db_event)
 
-    async def get_all(self) -> list[Event]:
+            event_row = rows[0]
+            seats = [
+                self._map_seat_row(row)
+                for row in rows
+                if row["seat_id"] is not None
+            ]
+            tiers = [
+                self._map_tier_row(row)
+                for row in rows
+                if row["tier_id"] is not None
+            ]
+            return self._map_db_model_to_entity(event_row, seats, tiers)
+
+    async def get_all(self, event_type: EventType | None = None) -> list[Event]:
         async with self.db_session.cursor() as cursor:
-            await cursor.execute("SELECT * FROM events")
+            if event_type:
+                await cursor.execute(
+                    "SELECT * FROM events WHERE event_type = %s",
+                    (event_type.value,)
+                )
+            else:
+                await cursor.execute("SELECT * FROM events")
             db_events = await cursor.fetchall()
             return [self._map_db_model_to_entity(db_event) for db_event in db_events]
 
