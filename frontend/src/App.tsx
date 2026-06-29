@@ -1,4 +1,5 @@
 import { useAuth0 } from "@auth0/auth0-react"
+import { Button } from "@/components/ui/button"
 
 function App() {
   const {
@@ -41,13 +42,13 @@ function App() {
       <p>Logged in as {user.email}</p>
       <h1>User Profile</h1>
       <pre>{JSON.stringify(user, null, 2)}</pre>
-      <button onClick={callBackend}>Fetch data</button>
-      <button onClick={logout}>Logout</button>
+      <Button onClick={callBackend}>Fetch data</Button>
+      <Button onClick={logout}>Logout</Button>
     </>
   ) : (
     <>
       {error && <p>Error: {error.message}</p>}
-      <button onClick={() => login()}>Login</button>
+      <Button onClick={() => login()}>Login</Button>
     </>
   );
 }
