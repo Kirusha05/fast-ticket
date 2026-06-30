@@ -6,7 +6,7 @@ from routes.deps.auth import get_current_user
 
 router = APIRouter()
 
-@router.get("/")
+@router.get("")
 async def get_all_users(db=Depends(get_db_session)):
     users_use_case = UsersUseCase(db)
     return await users_use_case.get_all_users()

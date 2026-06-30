@@ -20,7 +20,7 @@ def test_event_create_with_tickets(test_client: TestClient, db_session: AsyncCon
         ]
     }
 
-    response = test_client.post("/events/", json=request)
+    response = test_client.post("/events", json=request)
     data = response.json()
     print(json.dumps(data, indent=2))
 
@@ -56,7 +56,7 @@ async def test_event_create_with_seats(test_client: TestClient, db_session: Asyn
         ]
     }
 
-    response = test_client.post("/events/", json=request)
+    response = test_client.post("/events", json=request)
     data = response.json()
     print(json.dumps(data, indent=2))
 
@@ -93,7 +93,7 @@ def test_event_create_without_tickets(test_client: TestClient, db_session: Async
         "event_type": "open_field"
     }
 
-    response = test_client.post("/events/", json=request)
+    response = test_client.post("/events", json=request)
     data = response.json()
 
     # 422 comes from Pydantic's model_validator in CreateEventRequest

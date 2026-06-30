@@ -43,6 +43,9 @@ async def get_current_user(
     except JWTError as e:
         raise HTTPException(status_code=401, detail=f"Invalid token: {e}")
 
+    print("PAYLOAD")
+    print(payload)
+
     auth0_id: str | None = payload.get("sub")  # e.g. "auth0|64f3a..."
     if not auth0_id:
         raise HTTPException(status_code=401, detail="Token missing sub claim")

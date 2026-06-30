@@ -21,7 +21,8 @@ export function EventsPage() {
   return (
     <>
       <h1>Events Page</h1>
-      {events.map(event => <div>{event.name}</div>)}
+      {!events.length && <p>No events...</p>}
+      {events && events.map(event => <div>{event.name}</div>)}
     </>
   );
 }

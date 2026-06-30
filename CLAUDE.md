@@ -50,8 +50,46 @@ Primary keys are time-ordered UUIDs (see `EntityId.generate_uuid` — uuid1 time
 
 ## Frontend architecture
 
-Vite + React 19 + react-router 8. Auth0 is configured in `src/main.tsx` via `Auth0Provider` (domain/clientId hardcoded — `krrr.eu.auth0.com`, audience `https://fast-ticket.com`, `cacheLocation="localstorage"`). `src/App.tsx` is a demo: `getAccessTokenSilently()` then `fetch('http://localhost:8000/users/profile', { Authorization: Bearer ... })`. Backend calls should follow this pattern — attach the Auth0 access token as a Bearer header.
+Vite 8 + React 19 + TypeScript (strict), styled with Tailwind CSS 4 + ShadCN (`radix-nova` style, `neutral` base color, lucide icons). Routing is **TanStack Router** (file-based, *not* react-router despite the latter being in `package.json`); data fetching is **TanStack Query**; client state is **Zustand** (installed, not yet wired). Auth0 via `@auth0/auth0-react`. `@` aliases to `src/`.
+
+> **All future frontend work must follow the structure below.** The layered feature-based layout and the `api → hooks → components` split are intentional — keep new code in the matching layer.
+
+### App shell (`src/app/`)
+
+- `main.tsx` — the real entry point (note: `src/main.tsx` was deleted; the old `src/App.tsx` demo is dead code). Renders `<Providers />` into `#root`.
+- `providers.tsx` — the provider stack, outer→inner: `Auth0Provider` → `QueryClientProvider` → `RouterProvider`. Auth0 reads `VITE_AUTH0_DOMAIN` / `VITE_AUTH0_CLIENT_ID` / `VITE_AUTH0_AUDIENCE`, `cacheLocation="localstorage"`, `redirect_uri = window.location.origin`.
+- `query-client.ts` — singleton `queryClient` (retry 0, staleTime 60s, refetchOnWindowFocus). Imported directly by hooks for `invalidateQueries`.
+- `router.tsx` — `createRouter({ routeTree })`. Register the router type via `// See src/routeTree.gen.ts` (TanStack's `RouterProvider` generics are inferred from the generated tree).
+
+### Routing (`src/routes/`)
+
+File-based; **do not hand-edit `src/routeTree.gen.ts`** — the `@tanstack/router-plugin` (in `vite.config.ts`, `autoCodeSplitting: true`) regenerates it on dev/build from the files here. Add a route = add a file, e.g. `src/routes/events.tsx` → `/events`, `src/routes/events_.$eventId.tsx` → `/events/$eventId`. Each file does `export const Route = createFileRoute("/...")({ ... })`. The root layout lives in `__root.tsx` (currently a bare `<nav>` + `<Outlet>` + devtools — to be replaced by the sidebar/navbar shell).
+
+### Features (`src/features/<feature>/`)
+
+Each feature is self-contained and layered. **`features/events` is the reference implementation — mirror it for new features.**
+
+- `types.ts` — TS types mirroring the backend Pydantic models (`Event`, `EventSeat`, `EventTier`, `CreateEventRequest`, etc.). Keep this in sync with `backend/models/`.
+- `api/` — one file per endpoint. Pure async functions taking `(auth, body?)`, get the token via `auth.getAccessTokenSilently()`, then call `apiFetch`. Example: `create-event.ts`.
+- `hooks/` — one file per endpoint wrapping the api fn in `useQuery`/`useMutation`. The hook owns the `useAuth0()` call so components stay dumb. Mutations invalidate the relevant query key (e.g. `["events"]`) on success. Example: `useCreateEvent.ts`.
+- `stores/` — Zustand stores for feature-local client state (form/session state that doesn't come from the server). One store per concern, e.g. `useCreateEventStore.ts`. Components subscribe with narrow selectors (`useStore(s => s.field)`) to avoid broad re-renders — keep per-input/per-cell subscriptions, never select the whole store. Server-derived state stays in TanStack Query, not here.
+- `components/` — feature UI, split by sub-entity (`components/events/`, `components/event/`). `index.ts` re-exports the public components + any Zod search schemas (e.g. `eventsSearchSchema`) consumed by routes. Routes import from this barrel, never from deep paths.
+
+### Shared (`src/components/`, `src/lib/`, `src/hooks/`)
+
+- `components/ui/` — ShadCN primitives (only `button.tsx` so far). Add more via the shadcn CLI; they land here. Keep them untouched/generated.
+- `components/layout/` — app-level layout chrome (sidebar, navbar). `Sidebar.tsx` is currently a stub.
+- `lib/utils.ts` — `cn()` (clsx + tailwind-merge) and **`apiFetch<T>(url, { authToken, ...init })`**, the single fetch wrapper. It prepends `VITE_API_BASE_URL`, sets `Content-Type: application/json`, attaches `Authorization: Bearer <token>` when `authToken` is passed, and returns parsed JSON. **All backend calls go through `apiFetch`** — never call `fetch` directly. Note the URL convention: pass a path like `/events` (the `apiFetch` docstring suggests a trailing slash; match whatever the mounted backend router expects).
+- `hooks/` — cross-feature hooks (ShadCN convention). Empty so far.
+
+### Styling & theme
+
+`src/index.css` is Tailwind 4 (`@import "tailwindcss"`) + ShadCN variables in OKLCh with light/dark via a `.dark` class, plus Geist Variable font. Component variants use `class-variance-authority` (see `button.tsx`). Prefer ShadCN components + `cn()` over hand-rolled CSS.
+
+### Env (`.env` in `frontend/`)
+
+`VITE_AUTH0_DOMAIN`, `VITE_AUTH0_CLIENT_ID`, `VITE_AUTH0_AUDIENCE`, `VITE_API_BASE_URL` (no scheme prefix — `apiFetch` concatenates as `${VITE_API_BASE_URL}${url}`, so the backend must accept the host without `http://` or the value must include it; verify before relying on it). These must match `backend/.env`'s `AUTH0_*` and the backend's host/port.
 
 ## Auth0 / env setup
 
-`.env` (in `backend/`) holds `DB_`* and `AUTH0_*` values. The same Auth0 tenant/domain/clientId must match between `backend/.env` and `frontend/src/main.tsx`. The backend expects custom claims namespaced by `AUTH0_AUDIENCE` (e.g. `https://fast-ticket.com/email`) — ensure the Auth0 API is configured to emit those claims.
+`.env` (in `backend/`) holds `DB_`* and `AUTH0_*` values. The same Auth0 tenant/domain/clientId must match between `backend/.env` and `frontend/.env` (`VITE_AUTH0_*`). The backend expects custom claims namespaced by `AUTH0_AUDIENCE` (e.g. `https://fast-ticket.com/email`) — ensure the Auth0 API is configured to emit those claims. The frontend obtains the JWT with `getAccessTokenSilently()` (inside the api layer) and sends it as `Authorization: Bearer <token>` via `apiFetch`.

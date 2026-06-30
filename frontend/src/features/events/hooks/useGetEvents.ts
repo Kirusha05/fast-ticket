@@ -6,5 +6,8 @@ export const useGetEvents = (eventType: SearchEventType) => {
   return useQuery({
     queryKey: ["events"],
     queryFn: () => getEvents(eventType),
+    meta: {
+      errorMessage: "Failed to load users",
+    },
   });
 };

@@ -7,7 +7,7 @@ def test_events_list_empty(test_client: TestClient, db_session: AsyncConnection)
     """
     Setup: empty database
     """
-    response = test_client.get("/events/")
+    response = test_client.get("/events")
     data = response.json()
     print(json.dumps(data, indent=2))
 
@@ -26,7 +26,7 @@ async def test_events_list_all_no_bookings(test_client: TestClient, db_session: 
         await db_session.execute(f.read())
         await db_session.commit()
 
-    response = test_client.get("/events/")
+    response = test_client.get("/events")
     data = response.json()
     print(json.dumps(data, indent=2))
 
@@ -98,7 +98,7 @@ async def test_events_list_after_bookings(
         await db_session.execute(f.read())
         await db_session.commit()
 
-    response = test_client.get("/events/")
+    response = test_client.get("/events")
     data = response.json()
     print(json.dumps(data, indent=2))
 
@@ -128,13 +128,13 @@ async def test_events_list_filter_open_field(
 ):
     """
     Setup: all 3 events loaded (Summerfest open_field, Opera Night seated, Rock Arena seated).
-    GET /events/?event_type=open_field -> only Summerfest returned.
+    GET /events?event_type=open_field -> only Summerfest returned.
     """
     with open('tests/data/event.sql') as f:
         await db_session.execute(f.read())
         await db_session.commit()
 
-    response = test_client.get("/events/?event_type=open_field")
+    response = test_client.get("/events?event_type=open_field")
     data = response.json()
     print(json.dumps(data, indent=2))
 
@@ -152,13 +152,13 @@ async def test_events_list_filter_seated(
 ):
     """
     Setup: all 3 events loaded.
-    GET /events/?event_type=seated -> Opera Night and Rock Arena returned.
+    GET /events?event_type=seated -> Opera Night and Rock Arena returned.
     """
     with open('tests/data/event.sql') as f:
         await db_session.execute(f.read())
         await db_session.commit()
 
-    response = test_client.get("/events/?event_type=seated")
+    response = test_client.get("/events?event_type=seated")
     data = response.json()
     print(json.dumps(data, indent=2))
 
@@ -177,8 +177,8 @@ def test_events_list_filter_invalid(
     test_client: TestClient, db_session: AsyncConnection
 ):
     """
-    GET /events/?event_type=bogus -> 422 validation error
+    GET /events?event_type=bogus -> 422 validation error
     because "bogus" is not a valid EventType.
     """
-    response = test_client.get("/events/?event_type=bogus")
+    response = test_client.get("/events?event_type=bogus")
     assert response.status_code == 422
