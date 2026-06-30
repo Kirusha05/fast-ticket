@@ -4,4 +4,7 @@ import { EventsPage, eventsSearchSchema } from "@/features/events/components"
 export const Route = createFileRoute("/events")({
   validateSearch: eventsSearchSchema,
   component: EventsPage,
+  head: () => ({
+    meta: [{ title: "Events | FastTicket" }],
+  }),
 });

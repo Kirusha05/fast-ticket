@@ -24,7 +24,7 @@ const buildRequestPayload = (
     venue: state.venue.trim(),
     event_date: state.eventDate,
     event_type: state.eventType,
-    banner_url: state.bannerUrl
+    banner_url: state.bannerUrl.trim()
   };
 
   if (state.eventType === EventType.SEATED) {
