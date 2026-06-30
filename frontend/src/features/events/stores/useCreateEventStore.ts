@@ -35,6 +35,7 @@ type CreateEventState = {
   venue: string;
   eventDate: string;
   eventType: EventType;
+  bannerUrl: string;
 
   // seated
   rows: number;
@@ -53,6 +54,7 @@ type CreateEventState = {
   setVenue: (v: string) => void;
   setEventDate: (v: string) => void;
   setEventType: (v: EventType) => void;
+  setBannerUrl: (v: string) => void;
 
   setRows: (v: number) => void;
   setCols: (v: number) => void;
@@ -83,6 +85,7 @@ const initialState = {
   venue: "",
   eventDate: "",
   eventType: EventType.SEATED,
+  bannerUrl: "",
   rows: 10,
   cols: 15,
   gridConfirmed: false,
@@ -100,6 +103,7 @@ export const useCreateEventStore = create<CreateEventState>((set, get) => ({
   setVenue: (venue) => set({ venue }),
   setEventDate: (eventDate) => set({ eventDate }),
   setEventType: (eventType) => set({ eventType }),
+  setBannerUrl: (bannerUrl) => set({ bannerUrl }),
 
   setRows: (rows) => set({ rows }),
   setCols: (cols) => set({ cols }),

@@ -35,6 +35,7 @@ export type Event = {
   venue: string;
   event_date: string;
   event_type: EventType;
+  banner_url: string;
   total_tickets: number;
   available_tickets: number;
 
@@ -63,6 +64,7 @@ export type CreateEventRequest = {
   venue: string;
   event_date: string;
   event_type: EventType;
+  banner_url: string;
   seats: EventSeatInput[];
   tiers: EventTierInput[];
 };
@@ -72,4 +74,5 @@ export type UpdateEventRequest = {
   description: string | undefined;
   venue: string | undefined;
   event_date: string | undefined;
+  banner_url: string;
 };

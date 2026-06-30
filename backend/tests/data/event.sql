@@ -5,6 +5,7 @@ INSERT INTO events (
     venue,
     event_date,
     event_type,
+    banner_url,
     total_tickets,
     available_tickets
 )
@@ -15,6 +16,7 @@ VALUES (
     'Gradina Botanica',
     '2026-06-21',
     'open_field',
+    'https://t4.ftcdn.net/jpg/06/00/62/77/360_F_600627754_uKAUfEHyXUdPHlZWldI47Z5TqZpGKhB7.jpg',
     10000,
     10000
 ),
@@ -25,6 +27,7 @@ VALUES (
     'Ateneul Roman',
     '2026-06-21',
     'seated',
+    'https://t4.ftcdn.net/jpg/06/00/62/77/360_F_600627754_uKAUfEHyXUdPHlZWldI47Z5TqZpGKhB7.jpg',
     1000,
     1000
 ),
@@ -35,6 +38,7 @@ VALUES (
     'Sala Palatului',
     '2026-07-15',
     'seated',
+    'https://t4.ftcdn.net/jpg/06/00/62/77/360_F_600627754_uKAUfEHyXUdPHlZWldI47Z5TqZpGKhB7.jpg',
     500,
     500
 );

@@ -26,6 +26,7 @@ class EventsUseCase:
             venue=event_request.venue,
             event_date=event_request.event_date,
             event_type=event_request.event_type,
+            banner_url=event_request.banner_url,
             total_tickets=total_tickets,
             available_tickets=total_tickets
         )
@@ -76,6 +77,7 @@ class EventsUseCase:
             venue=event_request.venue if event_request.venue else existing_event.venue,
             event_date=event_request.event_date if event_request.event_date else existing_event.event_date,
             event_type=existing_event.event_type,
+            banner_url=event_request.banner_url if event_request.banner_url else existing_event.banner_url,
             total_tickets=existing_event.total_tickets,
             available_tickets=existing_event.available_tickets
         )

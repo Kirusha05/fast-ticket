@@ -1,4 +1,4 @@
-from fastapi import APIRouter, Depends, HTTPException, status
+from fastapi import APIRouter, Depends, status
 from usecases import EventsUseCase
 from config.db_session import get_db_session
 from models import Event, CreateEventRequest, EventType, User
@@ -21,9 +21,6 @@ async def create_event(
     event: CreateEventRequest, db=Depends(get_db_session),
     user: User =Depends(get_current_user)
 ) -> Event:
-    # if user.email != "cugureanuchiril@gmail.com":
-    #     raise HTTPException(403, "You're not an admin")
-
     events_use_case = EventsUseCase(db)
     result = await events_use_case.create(event)
     return result

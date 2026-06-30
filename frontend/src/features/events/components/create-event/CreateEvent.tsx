@@ -18,12 +18,13 @@ import { Input, Textarea, Label, Button, Card, CardContent, CardHeader, CardTitl
 const buildRequestPayload = (
   state: ReturnType<typeof useCreateEventStore.getState>,
 ): CreateEventRequest => {
-  const base = {
+  const base: Omit<CreateEventRequest, "seats" | "tiers"> = {
     name: state.name.trim(),
     description: state.description.trim(),
     venue: state.venue.trim(),
     event_date: state.eventDate,
     event_type: state.eventType,
+    banner_url: state.bannerUrl
   };
 
   if (state.eventType === EventType.SEATED) {
@@ -54,11 +55,12 @@ const buildRequestPayload = (
 const validate = (
   state: ReturnType<typeof useCreateEventStore.getState>,
 ): string | null => {
-  const { name, description, venue, eventDate } = state;
+  const { name, description, venue, eventDate, bannerUrl } = state;
   if (!name.trim()) return "Event name is required.";
   if (!description.trim()) return "Description is required.";
   if (!venue.trim()) return "Venue is required.";
   if (!eventDate) return "Date and time is required.";
+  if (!bannerUrl) return "Banner URL is required.";
 
   if (state.eventType === EventType.SEATED) {
     if (!state.gridConfirmed) return "Confirm the seat grid dimensions first.";
@@ -100,10 +102,12 @@ export function CreateEvent() {
   const venue = useCreateEventStore((s) => s.venue);
   const eventDate = useCreateEventStore((s) => s.eventDate);
   const eventType = useCreateEventStore((s) => s.eventType);
+  const bannerUrl = useCreateEventStore((s) => s.bannerUrl);
   const setName = useCreateEventStore((s) => s.setName);
   const setDescription = useCreateEventStore((s) => s.setDescription);
   const setVenue = useCreateEventStore((s) => s.setVenue);
   const setEventDate = useCreateEventStore((s) => s.setEventDate);
+  const setBannerUrl = useCreateEventStore((s) => s.setBannerUrl);
 
   // reset store on unmount
   useEffect(() => {
@@ -179,6 +183,15 @@ export function CreateEvent() {
               type="datetime-local"
               value={eventDate}
               onChange={(e) => setEventDate(e.target.value)}
+            />
+          </div>
+          <div className="space-y-1.5">
+            <Label htmlFor="bannerUrl">Banner URL</Label>
+            <Input
+              id="bannerUrl"
+              value={bannerUrl}
+              onChange={(e) => setBannerUrl(e.target.value)}
+              placeholder="e.g. https://..."
             />
           </div>
           <EventTypeSwitch />

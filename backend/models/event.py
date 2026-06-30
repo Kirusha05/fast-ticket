@@ -19,6 +19,7 @@ class Event(BaseEntity):
     venue: str
     event_date: datetime
     event_type: EventType
+    banner_url: str
 
     # Open field events use these
     total_tickets: int | None = None
@@ -49,6 +50,7 @@ class CreateEventRequest(BaseModel):
     venue: str
     event_date: datetime
     event_type: EventType
+    banner_url: str
     seats: list[EventSeatInput] = []
     tiers: list[EventTierInput] = []
 
@@ -66,3 +68,4 @@ class UpdateEventRequest(BaseModel):
     description: str | None
     venue: str | None
     event_date: datetime | None
+    banner_url: str | None

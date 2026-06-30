@@ -16,6 +16,7 @@ class EventsRepository(BaseRepository):
             venue=data['venue'],
             event_date=data['event_date'],
             event_type=data['event_type'],
+            banner_url=data['banner_url'],
             total_tickets=data.get('total_tickets'),
             available_tickets=data.get('available_tickets'),
             seats=seats or [],
@@ -50,12 +51,12 @@ class EventsRepository(BaseRepository):
     async def create(self, event: Event) -> Event | None:
         async with self.db_session.cursor() as cursor:
             await cursor.execute("""
-                INSERT INTO events (id, name, description, venue, event_date, event_type, total_tickets, available_tickets)
-                VALUES (%s, %s, %s, %s, %s, %s, %s, %s)
+                INSERT INTO events (id, name, description, venue, event_date, event_type, banner_url, total_tickets, available_tickets)
+                VALUES (%s, %s, %s, %s, %s, %s, %s, %s, %s)
                 RETURNING *
             """,
                 (event.id.value, event.name, event.description, event.venue, 
-                 event.event_date, event.event_type.value, 
+                 event.event_date, event.event_type.value, event.banner_url, 
                  event.total_tickets, event.available_tickets))
             db_event = await cursor.fetchone()
             if not db_event:
@@ -118,13 +119,13 @@ class EventsRepository(BaseRepository):
         async with self.db_session.cursor() as cursor:
             await cursor.execute("""
                 UPDATE events 
-                SET name = %s, description = %s, venue = %s, event_date = %s, 
-                    event_type = %s, total_tickets = %s, available_tickets = %s, updated_at = NOW()
+                SET name = %s, description = %s, venue = %s, event_date = %s, event_type = %s,
+                    banner_url = %s, total_tickets = %s, available_tickets = %s, updated_at = NOW()
                 WHERE id = %s
                 RETURNING *
             """,
-                (event.name, event.description, event.venue, event.event_date,
-                 event.event_type.value, event.total_tickets, event.available_tickets, id.value))
+                (event.name, event.description, event.venue, event.event_date, event.event_type.value,
+                 event.banner_url, event.total_tickets, event.available_tickets, id.value))
             db_event = await cursor.fetchone()
             if not db_event:
                 return None

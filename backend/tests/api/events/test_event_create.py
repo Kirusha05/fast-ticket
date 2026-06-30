@@ -3,18 +3,21 @@ from psycopg import AsyncConnection
 import json
 
 
-def test_event_create_with_tickets(test_client: TestClient, db_session: AsyncConnection):
+def test_event_create_with_tickets(test_client: TestClient, db_session: AsyncConnection, override_current_user_dummy):
     """
     Setup: empty database.
     POST a new open_field event Summerfest with 1 tier (General, $50, 10000 tickets).
     Event created with total_tickets=10000, available_tickets=10000.
     """
+    override_current_user_dummy()  # bypass authorization
+
     request = {
         "name": "Summerfest",
         "description": "Cel mai tare festival al verii",
         "venue": "Gradina Botanica",
         "event_date": "2026-06-21",
         "event_type": "open_field",
+        "banner_url": "https://t4.ftcdn.net/jpg/06/00/62/77/360_F_600627754_uKAUfEHyXUdPHlZWldI47Z5TqZpGKhB7.jpg",
         "tiers": [
             {"name": "General", "price": 50.0, "total_tickets": 10000}
         ]
@@ -31,24 +34,29 @@ def test_event_create_with_tickets(test_client: TestClient, db_session: AsyncCon
     assert data["venue"] == request["venue"]
     assert data["event_date"] is not None
     assert data["event_type"] == "open_field"
+    assert data["banner_url"] == request["banner_url"]
     assert data["total_tickets"] == 10000
     assert data["available_tickets"] == 10000
     assert data["created_at"] is not None
     assert data["updated_at"] is not None
 
 
-async def test_event_create_with_seats(test_client: TestClient, db_session: AsyncConnection):
+async def test_event_create_with_seats(test_client: TestClient, db_session: AsyncConnection, override_current_user_dummy):
     """
     Setup: empty database.
     POST a new seated event Opera Night with 3 seats (A1=$150, A2=$150, B1=$120).
     Event created with total_tickets=3. All 3 seats persisted in event_seats.
     """
+
+    override_current_user_dummy()  # bypass authorization
+
     request = {
         "name": "Opera Night",
         "description": "O seara de opera clasica",
         "venue": "Ateneul Roman",
         "event_date": "2026-06-21",
         "event_type": "seated",
+        "banner_url": "https://t4.ftcdn.net/jpg/06/00/62/77/360_F_600627754_uKAUfEHyXUdPHlZWldI47Z5TqZpGKhB7.jpg",
         "seats": [
             {"seat_number": "A1", "price": 150.0},
             {"seat_number": "A2", "price": 150.0},
@@ -79,18 +87,22 @@ async def test_event_create_with_seats(test_client: TestClient, db_session: Asyn
     assert [r["price"] for r in rows] == [150.0, 150.0, 120.0]
 
 
-def test_event_create_without_tickets(test_client: TestClient, db_session: AsyncConnection):
+def test_event_create_without_tickets(test_client: TestClient, db_session: AsyncConnection, override_current_user_dummy):
     """
     Setup: empty database.
     POST an open_field event without providing any tiers -> reject with 422
     (Pydantic model_validator enforces that open_field events require tiers).
     """
+
+    override_current_user_dummy()  # bypass authorization
+
     request = {
         "name": "Summerfest",
         "description": "Cel mai tare festival al verii",
         "venue": "Gradina Botanica",
         "event_date": "2026-06-21",
-        "event_type": "open_field"
+        "event_type": "open_field",
+        "banner_url": "https://t4.ftcdn.net/jpg/06/00/62/77/360_F_600627754_uKAUfEHyXUdPHlZWldI47Z5TqZpGKhB7.jpg"
     }
 
     response = test_client.post("/events", json=request)
