@@ -2,8 +2,7 @@ import { Link, useLocation } from "@tanstack/react-router";
 import { useAuth0 } from "@auth0/auth0-react";
 import { LogInIcon, LogOutIcon, UserIcon } from "lucide-react";
 
-import { SidebarTrigger } from "@/components/ui/sidebar";
-import { Button } from "@/components/ui/button";
+import { Button, SidebarTrigger } from "@/components/ui";
 
 const NAV_ITEMS = [
   { to: "/", label: "Home" },

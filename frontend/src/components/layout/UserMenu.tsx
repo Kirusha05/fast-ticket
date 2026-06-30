@@ -7,8 +7,8 @@ import {
   DropdownMenuItem,
   DropdownMenuSeparator,
   DropdownMenuTrigger,
-} from "@/components/ui/dropdown-menu";
-import { useSidebar } from "@/components/ui/sidebar";
+  useSidebar
+} from "@/components/ui";
 
 export function UserMenu() {
   const { user, logout } = useAuth0();
