@@ -31,7 +31,7 @@ export function UserMenu() {
             <UserIcon className="size-4 shrink-0" />
           )}
           {state === "expanded" && (
-            <span className="truncate">{user?.name ?? "User"}</span>
+            <span className="truncate font-medium">{user?.name ?? "User"}</span>
           )}
         </button>
       </DropdownMenuTrigger>

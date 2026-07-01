@@ -218,7 +218,7 @@ export function CreateEvent() {
 
       {/* Footer actions */}
       <div className="flex justify-end gap-3">
-        <Button className="cursor-pointer" variant="outline" onClick={() => navigate({ to: "/events" })}>
+        <Button variant="outline" onClick={() => navigate({ to: "/events" })}>
           Cancel
         </Button>
         <Button onClick={handleCreate} disabled={isPending}>
