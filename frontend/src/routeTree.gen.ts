@@ -10,13 +10,20 @@
 
 import { Route as rootRouteImport } from './routes/__root'
 import { Route as EventsRouteImport } from './routes/events'
+import { Route as BookingsRouteImport } from './routes/bookings'
 import { Route as IndexRouteImport } from './routes/index'
 import { Route as EventsCreateRouteImport } from './routes/events_.create'
 import { Route as EventsEventIdRouteImport } from './routes/events_.$eventId'
+import { Route as BookingsNewRouteImport } from './routes/bookings_.new'
 
 const EventsRoute = EventsRouteImport.update({
   id: '/events',
   path: '/events',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const BookingsRoute = BookingsRouteImport.update({
+  id: '/bookings',
+  path: '/bookings',
   getParentRoute: () => rootRouteImport,
 } as any)
 const IndexRoute = IndexRouteImport.update({
@@ -34,37 +41,69 @@ const EventsEventIdRoute = EventsEventIdRouteImport.update({
   path: '/events/$eventId',
   getParentRoute: () => rootRouteImport,
 } as any)
+const BookingsNewRoute = BookingsNewRouteImport.update({
+  id: '/bookings_/new',
+  path: '/bookings/new',
+  getParentRoute: () => rootRouteImport,
+} as any)
 
 export interface FileRoutesByFullPath {
   '/': typeof IndexRoute
+  '/bookings': typeof BookingsRoute
   '/events': typeof EventsRoute
+  '/bookings/new': typeof BookingsNewRoute
   '/events/$eventId': typeof EventsEventIdRoute
   '/events/create': typeof EventsCreateRoute
 }
 export interface FileRoutesByTo {
   '/': typeof IndexRoute
+  '/bookings': typeof BookingsRoute
   '/events': typeof EventsRoute
+  '/bookings/new': typeof BookingsNewRoute
   '/events/$eventId': typeof EventsEventIdRoute
   '/events/create': typeof EventsCreateRoute
 }
 export interface FileRoutesById {
   __root__: typeof rootRouteImport
   '/': typeof IndexRoute
+  '/bookings': typeof BookingsRoute
   '/events': typeof EventsRoute
+  '/bookings_/new': typeof BookingsNewRoute
   '/events_/$eventId': typeof EventsEventIdRoute
   '/events_/create': typeof EventsCreateRoute
 }
 export interface FileRouteTypes {
   fileRoutesByFullPath: FileRoutesByFullPath
-  fullPaths: '/' | '/events' | '/events/$eventId' | '/events/create'
+  fullPaths:
+    | '/'
+    | '/bookings'
+    | '/events'
+    | '/bookings/new'
+    | '/events/$eventId'
+    | '/events/create'
   fileRoutesByTo: FileRoutesByTo
-  to: '/' | '/events' | '/events/$eventId' | '/events/create'
-  id: '__root__' | '/' | '/events' | '/events_/$eventId' | '/events_/create'
+  to:
+    | '/'
+    | '/bookings'
+    | '/events'
+    | '/bookings/new'
+    | '/events/$eventId'
+    | '/events/create'
+  id:
+    | '__root__'
+    | '/'
+    | '/bookings'
+    | '/events'
+    | '/bookings_/new'
+    | '/events_/$eventId'
+    | '/events_/create'
   fileRoutesById: FileRoutesById
 }
 export interface RootRouteChildren {
   IndexRoute: typeof IndexRoute
+  BookingsRoute: typeof BookingsRoute
   EventsRoute: typeof EventsRoute
+  BookingsNewRoute: typeof BookingsNewRoute
   EventsEventIdRoute: typeof EventsEventIdRoute
   EventsCreateRoute: typeof EventsCreateRoute
 }
@@ -76,6 +115,13 @@ declare module '@tanstack/react-router' {
       path: '/events'
       fullPath: '/events'
       preLoaderRoute: typeof EventsRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/bookings': {
+      id: '/bookings'
+      path: '/bookings'
+      fullPath: '/bookings'
+      preLoaderRoute: typeof BookingsRouteImport
       parentRoute: typeof rootRouteImport
     }
     '/': {
@@ -99,12 +145,21 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof EventsEventIdRouteImport
       parentRoute: typeof rootRouteImport
     }
+    '/bookings_/new': {
+      id: '/bookings_/new'
+      path: '/bookings/new'
+      fullPath: '/bookings/new'
+      preLoaderRoute: typeof BookingsNewRouteImport
+      parentRoute: typeof rootRouteImport
+    }
   }
 }
 
 const rootRouteChildren: RootRouteChildren = {
   IndexRoute: IndexRoute,
+  BookingsRoute: BookingsRoute,
   EventsRoute: EventsRoute,
+  BookingsNewRoute: BookingsNewRoute,
   EventsEventIdRoute: EventsEventIdRoute,
   EventsCreateRoute: EventsCreateRoute,
 }

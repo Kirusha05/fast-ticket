@@ -7,9 +7,9 @@ from repositories import (
     EventSeatsRepository,
     BookingSeatedTicketsRepository,
     EventTiersRepository,
-    BookingTieredTicketsRepository,
+    BookingTieredTicketsRepository
 )
-from models import Booking, EntityId, Event, CreateBookingRequest, EventType, EventSeat
+from models import Booking, EntityId, Event, CreateBookingRequest, EventType, EventSeat, BookingResponse
 
 
 class BookingsUseCase:
@@ -22,7 +22,15 @@ class BookingsUseCase:
         self._event_tiers_repository = EventTiersRepository(db_session)
         self._booking_tiered_tickets_repository = BookingTieredTicketsRepository(db_session)
 
-    async def create(self, user_id: EntityId, booking_request: CreateBookingRequest) -> Booking:
+    def _map_entity_to_response(self, booking: Booking):
+        return BookingResponse(
+            id=booking.id,
+            status=booking.status,
+            ticket_count=booking.ticket_count,
+            total_price=booking.total_price
+        )
+
+    async def create_booking(self, user_id: EntityId, booking_request: CreateBookingRequest) -> BookingResponse:
         event_id = EntityId.from_string(booking_request.event_id)
 
         event = await self._events_repository.get_by_id(event_id)
@@ -44,7 +52,7 @@ class BookingsUseCase:
 
     async def _create_seated_booking(
         self, user_id: EntityId, event: Event, booking_request: CreateBookingRequest
-    ) -> Booking:
+    ) -> BookingResponse:
         seat_ids = [EntityId.from_string(sid) for sid in booking_request.seat_ids]
 
         seats = await self._event_seats_repository.get_seats_by_ids_for_update(seat_ids)
@@ -89,12 +97,12 @@ class BookingsUseCase:
         await self._booking_seated_tickets_repository.create_multiple(created_booking.id, seat_ids)
         await self._events_repository.decrement_available_tickets(event.id, booking.ticket_count)
 
-        final_booking = await self._bookings_repository.get_by_id(created_booking.id)
-        return final_booking
+        enriched = await self._enrich_bookings([created_booking])
+        return enriched[0]
 
     async def _create_open_field_booking(
         self, user_id: EntityId, event: Event, booking_request: CreateBookingRequest
-    ) -> Booking:
+    ) -> BookingResponse:
         tier_entries = []
         for ticket_input in booking_request.tiered_tickets:
             tier_id = EntityId.from_string(ticket_input.tier_id)
@@ -133,6 +141,7 @@ class BookingsUseCase:
                            f"Requested: {count}, Available: {tier.available_tickets}"
                 )
 
+            # decrement tier's available tickets
             success = await self._event_tiers_repository.decrement_available_tickets(tier.id, count)
             if not success:
                 raise HTTPException(
@@ -150,6 +159,7 @@ class BookingsUseCase:
                     "unit_price": unit_price,
                 })
 
+        # decrement event's available tickets
         await self._events_repository.decrement_available_tickets(event.id, total_ticket_count)
 
         booking = Booking(
@@ -167,10 +177,55 @@ class BookingsUseCase:
 
         await self._booking_tiered_tickets_repository.create_multiple(created_booking.id, ticket_rows)
 
-        final_booking = await self._bookings_repository.get_by_id(created_booking.id)
-        return final_booking
+        enriched = await self._enrich_bookings([created_booking])
+        return enriched[0]
 
-    async def get_booking(self, user_id: EntityId, booking_id: EntityId) -> Booking:
+    async def _enrich_bookings(self, bookings: list[Booking]) -> list[BookingResponse]:
+        # This function populates the .seated_tickets, .tiered_tickets and .event field, returning a complete BookingResponse
+        # To avoid N+1 problems, I ended up doing 4 constant DB calls (booking/s in the parent fn + 3 enrichment calls)
+        # We fetch all the corresponding seated/tiered tickets and assemble everything after that
+        # This is better than fetching all bookings in one call, then calling "get_event", "get_seated_tickets" etc. 
+        # separately for each booking in a loop (1 initial call + N calls * 3 calls), causing A LOT of roundtrips
+        if not bookings:
+            return []
+        
+        event_ids = [b.event_id for b in bookings]
+        booking_ids = [b.id for b in bookings]
+
+        events = await self._events_repository.get_by_ids(event_ids)
+        seated_tickets = await self._booking_seated_tickets_repository.get_seated_tickets_by_booking_ids(booking_ids)
+        tiered_tickets = await self._booking_tiered_tickets_repository.get_tiered_tickets_by_booking_ids(booking_ids)
+        
+        # convert from Booking to BookingResponse model
+        bookings = [BookingResponse.model_validate(booking, from_attributes=True) for booking in bookings]
+
+        # create the booking mapping for O(1) hashmap access
+        booking_mapping: dict[EntityId, Booking] = {}
+        for booking in bookings:
+            booking_mapping[booking.id] = booking
+        
+        # create the event mapping for O(1) hashmap access
+        event_mapping: dict[EntityId, Event] = {}
+        for event in events:
+            event_mapping[event.id] = event
+
+        # populate .seated_tickets
+        for seated_ticket in seated_tickets:
+            booking_id = seated_ticket.booking_id
+            booking_mapping[booking_id].seated_tickets.append(seated_ticket)
+        
+        # populate .tiered_tickets
+        for tiered_ticket in tiered_tickets:
+            booking_id = tiered_ticket.booking_id
+            booking_mapping[booking_id].tiered_tickets.append(tiered_ticket)
+
+        # populate .event
+        for booking in bookings:
+            booking.event = event_mapping[booking.event_id]
+        
+        return bookings
+
+    async def get_booking(self, user_id: EntityId, booking_id: EntityId) -> BookingResponse:
         booking = await self._bookings_repository.get_by_id(booking_id)
         if not booking:
             raise HTTPException(status_code=404, detail="Booking not found")
@@ -178,18 +233,15 @@ class BookingsUseCase:
         if booking.user_id.value != user_id.value:
             raise HTTPException(status_code=403, detail="You are not allowed to view this booking")
 
-        return booking
+        enriched = await self._enrich_bookings([booking])
+        return enriched[0]
 
-    async def list_bookings(self) -> list[Booking]:
-        return await self._bookings_repository.get_all()
+    async def get_user_bookings(self, user_id: EntityId) -> list[BookingResponse]:
+        bookings = await self._bookings_repository.get_by_user_id(user_id)
+        enriched = await self._enrich_bookings(bookings)
+        return enriched
 
-    async def list_user_bookings(self, user_id: EntityId) -> list[Booking]:
-        return await self._bookings_repository.get_by_user_id(user_id)
-
-    async def list_event_bookings(self, event_id: EntityId) -> list[Booking]:
-        return await self._bookings_repository.get_by_event_id(event_id)
-
-    async def cancel_booking(self, user_id: EntityId, booking_id: EntityId) -> Booking:
+    async def cancel_booking(self, user_id: EntityId, booking_id: EntityId) -> BookingResponse:
         booking = await self._bookings_repository.get_by_id(booking_id)
         if not booking:
             raise HTTPException(status_code=404, detail="Booking not found")
@@ -205,21 +257,25 @@ class BookingsUseCase:
             raise HTTPException(status_code=404, detail="Event no longer exists")
 
         if event.event_type == EventType.SEATED:
-            seat_ids = [bs.id for bs in booking.seated_tickets]
+            seated_tickets = await self._booking_seated_tickets_repository.get_seated_tickets_by_booking_ids([booking.id])
+            seat_ids = [seated_ticket.id for seated_ticket in seated_tickets]
             if seat_ids:
                 await self._event_seats_repository.mark_seats_as_available(seat_ids)
                 await self._booking_seated_tickets_repository.delete_by_booking_id(booking_id)
                 await self._events_repository.increment_available_tickets(event.id, booking.ticket_count)
 
         elif event.event_type == EventType.OPEN_FIELD:
-            if booking.tiered_tickets:
-                tier_counts = Counter(tt.ticket_tier_id.value for tt in booking.tiered_tickets)
-                for tier_uuid, count in tier_counts.items():
-                    tier_id = EntityId.from_uuid(tier_uuid, prefix='et')
-                    await self._event_tiers_repository.increment_available_tickets(tier_id, count)
-                await self._booking_tiered_tickets_repository.delete_by_booking_id(booking_id)
-                await self._events_repository.increment_available_tickets(event.id, booking.ticket_count)
+            tiered_tickets = await self._booking_tiered_tickets_repository.get_tiered_tickets_by_booking_ids([booking.id])
+
+            tier_counts = Counter(tt.tier_id.value for tt in tiered_tickets)
+            for tier_uuid, count in tier_counts.items():
+                tier_id = EntityId.from_uuid(tier_uuid, prefix='et')
+                await self._event_tiers_repository.increment_available_tickets(tier_id, count)
+            await self._booking_tiered_tickets_repository.delete_by_booking_id(booking_id)
+            await self._events_repository.increment_available_tickets(event.id, booking.ticket_count)
 
         booking.status = "cancelled"
         updated_booking = await self._bookings_repository.update(booking_id, booking)
-        return updated_booking
+
+        enriched = await self._enrich_bookings([updated_booking])
+        return enriched[0]

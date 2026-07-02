@@ -16,6 +16,7 @@ class BookingsRepository(BaseRepository):
             status=booking_row['status'],
             ticket_count=booking_row['ticket_count'],
             total_price=float(booking_row['total_price']) if booking_row.get('total_price') else 0.0,
+            event=None,
             seated_tickets=seated_tickets or [],
             tiered_tickets=tiered_tickets or [],
             created_at=booking_row['created_at'],
@@ -60,42 +61,13 @@ class BookingsRepository(BaseRepository):
     async def get_by_id(self, id: EntityId) -> Booking | None:
         async with self.db_session.cursor() as cursor:
             await cursor.execute("""
-                SELECT
-                    b.*,
-                    es.id AS seat_id,
-                    es.event_id AS seat_event_id,
-                    es.seat_number,
-                    es.price AS seat_price,
-                    es.is_available,
-                    es.created_at AS seat_created_at,
-                    es.updated_at AS seat_updated_at,
-                    btt.id AS tiered_ticket_id,
-                    btt.ticket_tier_id,
-                    btt.unit_price,
-                    btt.created_at AS tt_created_at,
-                    btt.updated_at AS tt_updated_at
-                FROM bookings b
-                LEFT JOIN booking_seated_tickets bst ON b.id = bst.booking_id
-                LEFT JOIN event_seats es ON es.id = bst.seat_id
-                LEFT JOIN booking_tiered_tickets btt ON b.id = btt.booking_id
-                WHERE b.id = %s
+                SELECT * FROM bookings
+                WHERE id = %s
             """, (id.value,))
-            rows = await cursor.fetchall()
-            if not rows:
+            db_booking = await cursor.fetchone()
+            if not db_booking:
                 return None
-
-            booking_row = rows[0]
-            seated_tickets = [
-                self._map_seat_row(row)
-                for row in rows
-                if row["seat_id"] is not None
-            ]
-            tiered_tickets = [
-                self._map_tiered_ticket_row(row)
-                for row in rows
-                if row["tiered_ticket_id"] is not None
-            ]
-            return self._map_db_model_to_entity(booking_row, seated_tickets, tiered_tickets)
+            return self._map_db_model_to_entity(db_booking)
 
     async def get_all(self) -> list[Booking]:
         async with self.db_session.cursor() as cursor:

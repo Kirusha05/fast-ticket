@@ -56,8 +56,7 @@ async def test_booking_get_own(
 
     assert response.status_code == 200
     assert data["id"] == booking_id
-    assert data["user_id"] == "u-11111111-1111-1111-1111-111111111111"
-    assert data["event_id"] == "e-22222222-2222-2222-2222-222222222222"
+    assert data["event"]["id"] == "e-22222222-2222-2222-2222-222222222222"
     assert data["status"] == "confirmed"
     assert data["ticket_count"] == 2
     assert data["total_price"] == 300.0

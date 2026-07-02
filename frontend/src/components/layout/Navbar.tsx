@@ -7,6 +7,7 @@ import { Button, SidebarTrigger } from "@/components/ui";
 const NAV_ITEMS = [
   { to: "/", label: "Home" },
   { to: "/events", label: "Events" },
+  { to: "/bookings", label: "Bookings" },
 ] as const;
 
 export function AppNavbar() {

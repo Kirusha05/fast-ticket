@@ -54,8 +54,4 @@ async def test_booking_list_for_user(
         "b-10000000-0000-0000-0000-000000000001",
         "b-10000000-0000-0000-0000-000000000002",
     }
-
-    # all returned bookings belong to the current user (user 1)
-    user_id = "u-11111111-1111-1111-1111-111111111111"
-    assert all(b["user_id"] == user_id for b in data)
     assert all(b["status"] == "confirmed" for b in data)

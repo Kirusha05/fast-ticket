@@ -1,6 +1,6 @@
-from pydantic import BaseModel, model_validator, Field
+from pydantic import BaseModel, model_validator
 from datetime import datetime
-from models import BaseEntity, EntityId, EventSeat, BookingTieredTicket
+from models import BaseEntity, EntityId, Event, EventSeat, BookingTieredTicket
 from typing import ClassVar
 
 
@@ -14,6 +14,7 @@ class Booking(BaseEntity):
     total_price: float = 0.0
 
     # Join fields
+    event: Event | None = None
     seated_tickets: list[EventSeat] = []
     tiered_tickets: list[BookingTieredTicket] = []
 
@@ -50,3 +51,34 @@ class CreateBookingRequest(BaseModel):
                     raise ValueError("Ticket count must be at least 1")
 
         return self
+
+
+class BookingEventSeat(BaseModel):
+    id: EntityId
+    seat_number: str
+    price: float
+    booking_id: EntityId
+    is_available: bool
+
+
+class BookingEventTier(BaseModel):
+    id: EntityId
+    tier_name: str
+    unit_price: float
+    booking_id: EntityId
+    tier_id: EntityId
+
+
+class BookingResponse(BaseModel):
+    id: EntityId
+    status: str
+    ticket_count: int
+    total_price: float
+    event_id: EntityId
+
+    event: Event | None = None
+    seated_tickets: list[BookingEventSeat] = []
+    tiered_tickets: list[BookingEventTier] = []
+
+    created_at: datetime | None = None
+    updated_at: datetime | None = None

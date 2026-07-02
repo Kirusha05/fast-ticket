@@ -115,6 +115,18 @@ class EventsRepository(BaseRepository):
             db_events = await cursor.fetchall()
             return [self._map_db_model_to_entity(db_event) for db_event in db_events]
 
+    async def get_by_ids(self, event_ids: list[EntityId]) -> list[Event]:
+        if not event_ids:
+            return []
+        
+        async with self.db_session.cursor() as cursor:
+            await cursor.execute(
+                "SELECT * FROM events WHERE id = ANY(%s)",
+                ([id.value for id in event_ids],)
+            )
+            db_events = await cursor.fetchall()
+            return [self._map_db_model_to_entity(db_event) for db_event in db_events]
+
     async def update(self, id: EntityId, event: Event) -> Event | None:
         async with self.db_session.cursor() as cursor:
             await cursor.execute("""

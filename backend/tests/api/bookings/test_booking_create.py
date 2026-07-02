@@ -30,7 +30,6 @@ async def test_booking_create_open_field(test_client: TestClient, db_session: As
         await db_session.commit()
 
     override_current_user_dummy()  # bypass authorization
-    user_id = "u-11111111-1111-1111-1111-111111111111"
     event_id = "e-11111111-1111-1111-1111-111111111111"
     tier_id = "et-77777777-7777-7777-7777-777777777777"
 
@@ -47,8 +46,7 @@ async def test_booking_create_open_field(test_client: TestClient, db_session: As
 
     assert response.status_code == 201
     assert data["id"] is not None
-    assert data["user_id"] == user_id
-    assert data["event_id"] == event_id
+    assert data["event"]["id"] == event_id
     assert data["status"] == "confirmed"
     assert data["ticket_count"] == 2
     assert data["total_price"] == 100.0
@@ -56,7 +54,7 @@ async def test_booking_create_open_field(test_client: TestClient, db_session: As
     assert len(data["tiered_tickets"]) == 2
     for tt in data["tiered_tickets"]:
         assert tt["unit_price"] == 50.0
-        assert tt["ticket_tier_id"] == tier_id
+        assert tt["tier_id"] == tier_id
     assert data["created_at"] is not None
     assert data["updated_at"] is not None
 
@@ -124,8 +122,7 @@ async def test_booking_create_seated(test_client: TestClient, db_session: AsyncC
 
     assert response.status_code == 201
     assert data["id"] is not None
-    assert data["user_id"] == user_id
-    assert data["event_id"] == event_id
+    assert data["event"]["id"] == event_id
     assert data["status"] == "confirmed"
     assert data["ticket_count"] == 2
     assert data["total_price"] == 300.0
