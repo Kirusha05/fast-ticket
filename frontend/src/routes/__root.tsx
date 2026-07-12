@@ -19,7 +19,7 @@ function RootLayout() {
         <SidebarInset>
           <AppNavbar />
 
-          <main className="flex-1 p-4 md:p-6">
+          <main className="mt-12 flex-1 p-8 md:p-6">
             <Outlet />
           </main>
         </SidebarInset>

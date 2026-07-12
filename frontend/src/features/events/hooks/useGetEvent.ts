@@ -5,5 +5,6 @@ export const useGetEvent = (eventId: string) => {
   return useQuery({
     queryKey: ["events", eventId],
     queryFn: () => getEvent(eventId),
+    staleTime: 0
   });
 };

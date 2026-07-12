@@ -1,9 +1,7 @@
-import { createFileRoute } from '@tanstack/react-router'
+import { createFileRoute } from "@tanstack/react-router";
+import { NewBookingPage, newBookingSchema } from "@/features/bookings/components";
 
-export const Route = createFileRoute('/bookings_/new')({
-  component: RouteComponent,
-})
-
-function RouteComponent() {
-  return <div>Hello "/bookings_/new"!</div>
-}
+export const Route = createFileRoute("/bookings_/new")({
+  validateSearch: newBookingSchema,
+  component: NewBookingPage,
+});

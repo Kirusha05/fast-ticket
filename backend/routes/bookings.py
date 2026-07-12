@@ -8,7 +8,7 @@ from models import CreateBookingRequest, EntityId, User, BookingResponse
 router = APIRouter()
 
 
-@router.get("/")
+@router.get("")
 async def get_all_bookings(
     db=Depends(get_db_session),
     user: User = Depends(get_current_user),
@@ -28,7 +28,7 @@ async def get_booking(
     return await bookings_use_case.get_booking(user.id, booking_id)
 
 
-@router.post("/", status_code=status.HTTP_201_CREATED)
+@router.post("", status_code=status.HTTP_201_CREATED)
 async def create_booking(
     booking: CreateBookingRequest,
     db=Depends(get_db_session),

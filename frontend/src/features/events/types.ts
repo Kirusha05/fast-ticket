@@ -5,7 +5,7 @@ export enum EventType {
 
 export type SearchEventType = "open_field" | "seated" | undefined;
 
-export type EventSeat = {
+export interface EventSeat {
   id: string;
   event_id: string;
   seat_number: string;
@@ -16,7 +16,7 @@ export type EventSeat = {
   updated_at: string;
 };
 
-export type EventTier = {
+export interface EventTier {
   id: string;
   event_id: string;
   name: string;
@@ -28,7 +28,7 @@ export type EventTier = {
   updated_at: string;
 };
 
-export type Event = {
+export interface Event {
   id: string;
   name: string;
   description: string;
@@ -47,18 +47,18 @@ export type Event = {
 };
 
 // API types
-export type EventSeatInput = {
+export interface EventSeatInput {
   seat_number: string;
   price: number;
 };
 
-export type EventTierInput = {
+export interface EventTierInput {
   name: string;
   price: number;
   total_tickets: number;
 };
 
-export type CreateEventRequest = {
+export interface CreateEventRequest {
   name: string;
   description: string;
   venue: string;
@@ -69,10 +69,10 @@ export type CreateEventRequest = {
   tiers: EventTierInput[];
 };
 
-export type UpdateEventRequest = {
+export interface UpdateEventRequest {
   name: string | undefined;
   description: string | undefined;
   venue: string | undefined;
   event_date: string | undefined;
-  banner_url: string;
+  banner_url: string | undefined;
 };

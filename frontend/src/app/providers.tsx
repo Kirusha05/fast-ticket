@@ -1,5 +1,6 @@
 import { Auth0Provider } from "@auth0/auth0-react";
 import { QueryClientProvider } from "@tanstack/react-query";
+import { ReactQueryDevtools } from '@tanstack/react-query-devtools';
 import { RouterProvider } from "@tanstack/react-router";
 
 import { router } from "./router";
@@ -17,6 +18,7 @@ export function Providers() {
       cacheLocation="localstorage"
     >
       <QueryClientProvider client={queryClient}>
+        {/* <ReactQueryDevtools initialIsOpen={false} position="bottom" /> */}
         <RouterProvider router={router} />
       </QueryClientProvider>
     </Auth0Provider>

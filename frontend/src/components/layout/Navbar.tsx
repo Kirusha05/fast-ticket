@@ -16,7 +16,7 @@ export function AppNavbar() {
   const location = useLocation();
 
   return (
-    <header className="flex h-12 shrink-0 items-center gap-3 border-b px-3">
+    <header className="flex w-full bg-black/30 z-50 h-12 shrink-0 items-center gap-3 border-b px-3 fixed backdrop-blur-lg">
       <SidebarTrigger />
 
       {/* Desktop nav links */}

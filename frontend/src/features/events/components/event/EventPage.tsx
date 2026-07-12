@@ -48,6 +48,8 @@ export function EventPage() {
   const { eventId } = Route.useParams();
   const { data: event, isPending, isFetching, isError, error } = useGetEvent(eventId);
 
+  console.log("Event: ", event);
+
   if (isPending) {
     return (
       <div className="space-y-10">
@@ -197,7 +199,7 @@ export function EventPage() {
             <CardFooter>
               {event.available_tickets > 0 ? (
                 <Button className="w-full cursor-pointer" size="lg" asChild>
-                  <Link to="/bookings/new">Get Tickets</Link>
+                  <Link to="/bookings/new" search={{ event_id: event.id }}>Get Tickets</Link>
                 </Button>
               ) : (
                 <p className="w-full text-center text-sm text-muted-foreground">

@@ -40,7 +40,7 @@ async def test_booking_create_open_field(test_client: TestClient, db_session: As
         ]
     }
 
-    response = test_client.post("/bookings/", json=request)
+    response = test_client.post("/bookings", json=request)
     data = response.json()
     # print(json.dumps(data, indent=2))
 
@@ -116,7 +116,7 @@ async def test_booking_create_seated(test_client: TestClient, db_session: AsyncC
         "seat_ids": seat_ids
     }
 
-    response = test_client.post("/bookings/", json=request)
+    response = test_client.post("/bookings", json=request)
     data = response.json()
     print(json.dumps(data, indent=2))
 
@@ -199,7 +199,7 @@ async def test_booking_create_seated_wrong_event_seats(
         "seat_ids": seat_ids
     }
 
-    response = test_client.post("/bookings/", json=request)
+    response = test_client.post("/bookings", json=request)
     data = response.json()
 
     assert response.status_code == 400
@@ -249,7 +249,7 @@ async def test_booking_create_seated_nonexistent_seats(
         "seat_ids": seat_ids
     }
 
-    response = test_client.post("/bookings/", json=request)
+    response = test_client.post("/bookings", json=request)
     data = response.json()
     print(json.dumps(data, indent=2))
 
@@ -313,7 +313,7 @@ async def test_booking_create_seated_seat_already_taken(
         "seat_ids": seat_ids
     }
 
-    response = test_client.post("/bookings/", json=request)
+    response = test_client.post("/bookings", json=request)
     data = response.json()
     print(json.dumps(data, indent=2))
 
@@ -359,7 +359,7 @@ async def test_booking_create_open_field_zero_tickets(
         ]
     }
 
-    response = test_client.post("/bookings/", json=request)
+    response = test_client.post("/bookings", json=request)
     data = response.json()
     print(json.dumps(data, indent=2))
 

@@ -9,11 +9,11 @@ import {
   CardTitle,
 } from "@/components/ui/card";
 
-type Props = {
+interface IProps {
   event: Event;
 };
 
-export function EventCard({ event }: Props) {
+export function EventCard({ event }: IProps) {
   const navigate = useNavigate();
 
   const formattedDate = new Intl.DateTimeFormat("en-US", {

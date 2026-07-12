@@ -42,7 +42,7 @@ async def test_booking_list_for_user(
 
     override_current_user_dummy()  # bypass authorization, logged in as user 1
 
-    response = test_client.get("/bookings/")
+    response = test_client.get("/bookings")
     data = response.json()
     print(json.dumps(data, indent=2))
 
