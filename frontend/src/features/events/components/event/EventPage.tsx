@@ -48,8 +48,6 @@ export function EventPage() {
   const { eventId } = Route.useParams();
   const { data: event, isPending, isFetching, isError, error } = useGetEvent(eventId);
 
-  console.log("Event: ", event);
-
   if (isPending) {
     return (
       <div className="space-y-10">

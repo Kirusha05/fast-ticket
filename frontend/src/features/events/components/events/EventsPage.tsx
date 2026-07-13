@@ -6,6 +6,7 @@ import { EventCard } from "./EventCard";
 import { Skeleton } from "@/components/ui/skeleton";
 import { Button } from "@/components/ui";
 import { Loader2, Plus, Ticket } from "lucide-react";
+import { useIsAdmin } from "@/features/common/auth/hooks/useIsAdmin";
 
 export const eventsSearchSchema = z.object({
   event_type: z.enum(["open_field", "seated"]).optional().catch(undefined),
@@ -21,16 +22,17 @@ export function EventsPage() {
   const navigate = useNavigate();
   const { event_type } = Route.useSearch();
   const { data: events, isPending, isFetching, isError, error } = useGetEvents(event_type);
+  const isAdmin = useIsAdmin();
 
   return (
     <div className="space-y-6">
       {/* Header */}
       <div className="flex items-center justify-between">
         <h1 className="text-2xl font-bold">Events</h1>
-        <Button className="cursor-pointer" onClick={() => navigate({ to: "/events/create" })}>
+        {isAdmin && <Button className="cursor-pointer" onClick={() => navigate({ to: "/events/create" })}>
           <Plus className="mr-1 h-4 w-4" />
           New
-        </Button>
+        </Button>}
       </div>
 
       {/* Filter tabs */}

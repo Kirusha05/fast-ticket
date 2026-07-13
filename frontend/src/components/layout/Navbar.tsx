@@ -2,26 +2,34 @@ import { Link, useLocation } from "@tanstack/react-router";
 import { useAuth0 } from "@auth0/auth0-react";
 import { LogInIcon, LogOutIcon, UserIcon } from "lucide-react";
 
-import { Button, SidebarTrigger } from "@/components/ui";
+import { Button, SidebarTrigger, useSidebar } from "@/components/ui";
+import { useIsAdmin } from "@/features/common/auth/hooks/useIsAdmin";
 
 const NAV_ITEMS = [
-  { to: "/", label: "Home" },
-  { to: "/events", label: "Events" },
-  { to: "/bookings", label: "Bookings" },
+  { to: "/", label: "Home", authRequired: false },
+  { to: "/events", label: "Events", authRequired: false },
+  { to: "/bookings", label: "Bookings", authRequired: true },
 ] as const;
 
 export function AppNavbar() {
   const { isLoading, isAuthenticated, loginWithRedirect, logout } =
     useAuth0();
   const location = useLocation();
+  const isAdmin = useIsAdmin();
+  const { state: sidebarState, isMobile } = useSidebar()
+
+  let navbarLeft = "left-0";
+  if (!isMobile && isAdmin) {
+    navbarLeft = sidebarState === 'expanded' ? "left-64" : "left-12"
+  }
 
   return (
-    <header className="flex w-full bg-black/30 z-50 h-12 shrink-0 items-center gap-3 border-b px-3 fixed backdrop-blur-lg">
-      <SidebarTrigger />
+    <header className={`flex bg-black/30 z-50 h-12 shrink-0 items-center gap-3 border-b px-3 fixed an right-0 ${navbarLeft} backdrop-blur-lg transition-[left] duration-200 ease-linear`}>
+      {isAdmin &&<SidebarTrigger />}
 
       {/* Desktop nav links */}
       <nav className="hidden items-center gap-1 md:flex">
-        {NAV_ITEMS.map((item) => {
+        {NAV_ITEMS.filter(item => item.authRequired && !isAuthenticated ? false : true).map((item) => {
           const isActive = location.pathname === item.to;
           return (
             <Button
