@@ -13,6 +13,7 @@ class UsersRepository(BaseRepository):
             name=data['name'],
             email=data['email'],
             auth0_id=data['auth0_id'],
+            role=data['role'],
             created_at=data['created_at'],
             updated_at=data['updated_at']
         )
@@ -20,11 +21,11 @@ class UsersRepository(BaseRepository):
     async def create(self, user: User) -> User | None:
         async with self.db_session.cursor() as cursor:
             await cursor.execute("""
-                INSERT INTO users (id, name, email, auth0_id) 
-                VALUES (%s, %s, %s, %s)
+                INSERT INTO users (id, name, email, auth0_id, role) 
+                VALUES (%s, %s, %s, %s, %s)
                 RETURNING *
             """,
-            (user.id.value, user.name, user.email, user.auth0_id))
+            (user.id.value, user.name, user.email, user.auth0_id, user.role))
             db_user = await cursor.fetchone()
             if not db_user:
                 return None

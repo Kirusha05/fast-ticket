@@ -1,6 +1,6 @@
 import pytest
 from main import app
-from models import User, EntityId
+from models import User, EntityId, UserRole
 from fastapi.testclient import TestClient
 from psycopg import AsyncConnection
 from psycopg.rows import dict_row
@@ -84,7 +84,8 @@ def override_current_user_dummy(test_client: TestClient):
         id=EntityId.from_string("u-11111111-1111-1111-1111-111111111111"),
         name="Test User",
         email="test@test.com",
-        auth0_id="ababababababab"
+        auth0_id="ababababababab",
+        role=UserRole.USER
     )
 
     def _ovveride():

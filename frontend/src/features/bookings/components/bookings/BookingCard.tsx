@@ -42,7 +42,7 @@ function ticketSummary(booking: Booking) {
       {} as Record<string, { name: string; price: number; count: number }>,
     );
     return Object.values(grouped)
-      .map((g) => `${g.name} × ${g.count} @ ${usd.format(g.price)} each`)
+      .map((g) => `${g.name} × ${g.count} at ${usd.format(g.price)} each`)
       .join(", ");
   }
 

@@ -1,4 +1,4 @@
-"""add_booking_tiered_tickets_table
+"""add booking_tiered_tickets table
 
 Revision ID: ebc7a1596144
 Revises: d455052884ad

@@ -19,12 +19,15 @@ depends_on: Union[str, Sequence[str], None] = None
 
 
 def upgrade() -> None:
+    user_role_enum = sa.Enum('user', 'admin', name='user_role')
+
     op.create_table(
         'users',
         sa.Column('id', sa.UUID(as_uuid=True), primary_key=True, nullable=False),
         sa.Column('name', sa.String(length=255), nullable=False),
         sa.Column('email', sa.String(length=255), nullable=False, unique=True),
         sa.Column('auth0_id', sa.String(length=255), nullable=False, unique=True),
+        sa.Column('role', user_role_enum, nullable=False),
         sa.Column('created_at', sa.DateTime(), server_default=sa.func.now(), nullable=False),
         sa.Column('updated_at', sa.DateTime(), server_default=sa.func.now(), nullable=False),
     )
@@ -32,3 +35,5 @@ def upgrade() -> None:
 
 def downgrade() -> None:
     op.drop_table('users')
+    user_role_enum = sa.Enum(name='user_role')
+    user_role_enum.drop(op.get_bind())

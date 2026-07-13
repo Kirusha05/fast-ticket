@@ -5,7 +5,8 @@ from config.config import config
 from config.db_session import get_db_session
 
 from models import User
-from repositories import UsersRepository
+# from repositories import UsersRepository
+from usecases import UsersUseCase
 
 # Cache JWKS so we don't hit Auth0 on every request
 # Keys rarely rotate; a server restart will refresh the cache if they do
@@ -43,16 +44,16 @@ async def get_current_user(
     except JWTError as e:
         raise HTTPException(status_code=401, detail=f"Invalid token: {e}")
 
-    print("PAYLOAD")
-    print(payload)
+    # print("PAYLOAD")
+    # print(payload)
 
     auth0_id: str | None = payload.get("sub")  # e.g. "auth0|64f3a..."
     if not auth0_id:
         raise HTTPException(status_code=401, detail="Token missing sub claim")
 
     # 3. Find the DB user
-    users_repository = UsersRepository(db)
-    user = await users_repository.get_by_auth0_id(auth0_id)
+    users_use_case = UsersUseCase(db)
+    user = await users_use_case.get_by_auth0_id(auth0_id)
 
     if user:
         return user
@@ -62,14 +63,5 @@ async def get_current_user(
     email = payload.get(f"{namespace}/email")
     name = payload.get(f"{namespace}/name")
 
-    if await users_repository.get_by_email(email):
-        raise HTTPException(status_code=400, detail="User with this email already exists.")
-
-    new_user = User(
-        id=User.generate_entity_id(),
-        name=name,
-        email=email,
-        auth0_id=auth0_id,
-    )
-    created_user = await users_repository.create(new_user)
+    created_user = await users_use_case.create_user(email, name, auth0_id)
     return created_user

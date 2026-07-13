@@ -1,4 +1,4 @@
-"""add_event_tiers_table
+"""add event_tiers table
 
 Revision ID: d455052884ad
 Revises: e93ec9fad1a9
