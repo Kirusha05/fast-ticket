@@ -5,7 +5,7 @@ import { AppSidebar, AppNavbar } from "@/components/layout";
 import { SidebarProvider, SidebarInset } from "@/components/ui/sidebar";
 import { TooltipProvider } from "@/components/ui/tooltip";
 import { Toaster } from "@/components/ui/sonner";
-import { useIsAdmin } from "@/features/common/auth/hooks/useIsAdmin";
+import { useIsMobile } from "@/hooks/use-mobile";
 
 export interface RouterContext {
   auth: {
@@ -20,17 +20,17 @@ export const Route = createRootRouteWithContext<RouterContext>()({
 });
 
 function RootLayout() {
-  const isAdmin = useIsAdmin();
+  const isMobile = useIsMobile();
 
   return (
     <TooltipProvider>
-      <SidebarProvider defaultOpen={isAdmin}>
-        {isAdmin && <AppSidebar />}
+      <SidebarProvider defaultOpen={false}>
+        {isMobile && <AppSidebar />}
 
         <SidebarInset>
           <AppNavbar />
 
-          <main className="mt-12 flex-1 p-8 md:p-6">
+          <main className="mt-12 flex-1 p-6">
             <Outlet />
           </main>
         </SidebarInset>

@@ -50,7 +50,7 @@ export function EventPage() {
 
   if (isPending) {
     return (
-      <div className="space-y-10">
+      <div className="space-y-10 container mx-auto">
         {/* Banner skeleton */}
         <Skeleton className="aspect-[16/9] max-w-4xl rounded-xl mx-auto" />
 
@@ -81,7 +81,7 @@ export function EventPage() {
 
   if (isError) {
     return (
-      <div className="flex flex-col items-center justify-center py-20">
+      <div className="flex flex-col items-center justify-center">
         <Card className="w-full max-w-md">
           <CardHeader>
             <div className="flex items-center gap-2">
@@ -112,7 +112,7 @@ export function EventPage() {
   const ticketNoun = event.event_type === EventType.SEATED ? "seats" : "tickets";
 
   return (
-    <div className="space-y-10">
+    <div className="space-y-10 container mx-auto">
       {/* Banner image */}
       {event.banner_url && (
         <div className="max-w-4xl mx-auto">

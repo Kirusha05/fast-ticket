@@ -142,7 +142,7 @@ export function NewBookingPage() {
   const formattedDate = formatDateTime(event.event_date);
 
   return (
-    <div className="mx-auto max-w-4xl space-y-8 py-6">
+    <div className="mx-auto max-w-4xl space-y-8">
       {/* ---------- Event summary card ---------- */}
       <Card className="overflow-hidden">
         {event.banner_url && (
@@ -154,9 +154,6 @@ export function NewBookingPage() {
         )}
         <CardContent>
           <h1 className="text-2xl font-bold tracking-tight">{event.name}</h1>
-          <p className="mt-2 text-sm leading-relaxed text-muted-foreground">
-            {event.description}
-          </p>
 
           <div className="mt-4 flex flex-wrap items-center gap-x-6 gap-y-4">
             {/* Venue */}

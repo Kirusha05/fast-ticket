@@ -6,20 +6,20 @@ import {
   DropdownMenuContent,
   DropdownMenuItem,
   DropdownMenuSeparator,
-  DropdownMenuTrigger,
-  useSidebar
+  DropdownMenuTrigger
 } from "@/components/ui";
+import { useIsMobile } from "@/hooks/use-mobile";
 
 export function UserMenu() {
   const { user, logout } = useAuth0();
-  const { state } = useSidebar();
+  const isMobile = useIsMobile();
 
   return (
     <DropdownMenu>
       <DropdownMenuTrigger asChild>
         <button
           type="button"
-          className={`flex w-full items-center gap-2 rounded-md ${state == "expanded" ? "p-2" : "py-2 justify-center"} text-left text-sm ring-sidebar-ring outline-hidden transition-[width,height,padding] hover:bg-sidebar-accent hover:text-sidebar-accent-foreground focus-visible:ring-2 cursor-pointer`}
+          className={`flex w-full items-center gap-2 rounded-md p-2 text-left text-sm ring-sidebar-ring outline-hidden transition-[width,height,padding] hover:bg-sidebar-accent hover:text-sidebar-accent-foreground cursor-pointer`}
         >
           {user?.picture ? (
             <img
@@ -30,16 +30,14 @@ export function UserMenu() {
           ) : (
             <UserIcon className="size-4 shrink-0" />
           )}
-          {state === "expanded" && (
-            <span className="truncate font-medium">{user?.name ?? "User"}</span>
-          )}
+          <span className="truncate font-medium">{user?.name ?? "User"}</span>
         </button>
       </DropdownMenuTrigger>
 
       <DropdownMenuContent
-        align="end"
-        side="right"
-        sideOffset={18}
+        align={isMobile ? "start" : "end"}
+        side="bottom"
+        sideOffset={10}
         className="w-64"
       >
         <div className="flex items-center gap-3 px-2 py-2">
@@ -67,6 +65,7 @@ export function UserMenu() {
         <DropdownMenuSeparator />
 
         <DropdownMenuItem
+          className="cursor-pointer"
           variant="destructive"
           onClick={() =>
             logout({ logoutParams: { returnTo: window.location.origin } })

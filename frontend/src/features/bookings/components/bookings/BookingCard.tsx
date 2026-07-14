@@ -8,6 +8,7 @@ import { Separator } from "@/components/ui/separator";
 import { useCancelBooking } from "@/features/bookings/hooks/useCancelBooking";
 import { cn } from "@/lib/utils";
 import { toast } from "sonner";
+import { useIsMobile } from "@/hooks/use-mobile";
 
 const usd = new Intl.NumberFormat("en-US", {
   style: "currency",
@@ -15,7 +16,6 @@ const usd = new Intl.NumberFormat("en-US", {
 });
 
 const dateFormat = new Intl.DateTimeFormat("en-US", {
-  weekday: "short",
   month: "short",
   day: "numeric",
   year: "numeric",
@@ -54,11 +54,8 @@ interface IProps {
 }
 
 export function BookingCard({ booking }: IProps) {
-  const isCancelled = booking.status === "cancelled";
-  console.log("booking:", booking)
   const { mutate: cancelBooking, isPending: isCancelling } = useCancelBooking();
-
-  const formattedEventDate = dateFormat.format(new Date(booking.event.event_date));
+  const isMobile = useIsMobile();
 
   const handleCancelBooking = () => {
     cancelBooking(booking.id, {
@@ -71,10 +68,13 @@ export function BookingCard({ booking }: IProps) {
     });
   }
 
+  const isCancelled = booking.status === "cancelled";
+  const formattedEventDate = dateFormat.format(new Date(booking.event.event_date));
+
   return (
     <Card
       className={cn(
-        "flex-row gap-2 overflow-hidden py-0 transition-shadow hover:shadow-md ",
+        "flex-col md:flex-row gap-0 md:gap-2 overflow-hidden py-0 transition-shadow hover:shadow-md ",
         isCancelled && "opacity-60",
       )}
     >
@@ -87,26 +87,76 @@ export function BookingCard({ booking }: IProps) {
         <img
           src={booking.event.banner_url}
           alt={booking.event.name}
-          className="aspect-[4/3] h-60 shrink-0 cursor-pointer object-cover transition-opacity hover:opacity-80"
+          className="aspect-[4/3] w-full md:w-auto h-60 shrink-0 cursor-pointer object-cover transition-opacity hover:opacity-80"
         />
       </Link>
 
-      <CardContent className="flex min-w-0 flex-1 flex-col justify-between gap-1.5 p-4">
-        {/* row 1: event name + status */}
-        <div className="flex items-start justify-between gap-2">
-          <span className="truncate text-sm font-semibold">
-            {booking.event.name}
-          </span>
+      <CardContent className="flex min-w-0 flex-1 flex-col justify-between p-4">
+        <div className="space-y-2">
+          {/* row 1: event name + status */}
+          <div className="flex items-center justify-between gap-2">
+            <span className="truncate text-sm font-semibold">
+              {booking.event.name}
+            </span>
+            <div className="flex items-center gap-1.5 shrink-0">
+              <Button variant="outline" size="sm" asChild>
+                <Link
+                  to="/events/$eventId"
+                  params={{ eventId: booking.event_id }}
+                  >
+                  <ExternalLink className="h-3.5 w-3.5" />
+                  View event
+                </Link>
+              </Button>
+            </div>
+          </div>
+
+          {/* row 2: venue + date */}
+          <div className="flex flex-wrap items-center gap-x-4 gap-y-2 text-xs text-muted-foreground">
+            <span className="inline-flex items-center gap-1">
+              <MapPin className="h-3.5 w-3.5 shrink-0" />
+              {booking.event.venue}
+            </span>
+            <span className="inline-flex items-center gap-1">
+              <CalendarDays className="h-3.5 w-3.5 shrink-0" />
+              {formattedEventDate}
+            </span>
+          </div>
+
+          <Separator className="my-4" />
+
+          {/* row 3: ticket breakdown */}
+          {ticketSummary(booking) && (
+            <>
+              <div className="flex items-center gap-1.5 text-xs text-muted-foreground">
+                <Ticket className="h-3.5 w-3.5 shrink-0" />
+                <span className="truncate">{ticketSummary(booking)}</span>
+              </div>
+              {isMobile && <Separator className="mt-auto my-4" />}
+            </>
+          )}
+        </div>
+
+
+        {/* row 4: count + total */}
+        <div className="flex flex-col md:flex-row md:items-center gap-2 justify-between text-sm">
           <div className="flex items-center gap-1.5 shrink-0">
-            <Button variant="outline" size="sm" asChild>
-              <Link
-                to="/events/$eventId"
-                params={{ eventId: booking.event_id }}
-                >
-                <ExternalLink className="h-3.5 w-3.5" />
-                View event
-              </Link>
-            </Button>
+            <span className="text-muted-foreground">
+              {booking.ticket_count}{" "}
+              {booking.ticket_count === 1 ? "ticket" : "tickets"}
+            </span>
+            <Separator orientation="vertical" className="mx-1" />
+            <span className="inline-flex items-center gap-1 text-muted-foreground">
+              {isCancelled ? "canceled on" : "booked on"}
+              <CalendarDays className="h-3.5 w-3.5 shrink-0" />
+              {dateFormat.format(new Date(isCancelled ? booking.updated_at : booking.created_at))}
+            </span>
+          </div>
+          <div className="mt-4 md:mt-0 flex justify-between md:justify-start items-center gap-4">
+            <span className="font-semibold">
+              {usd.format(booking.total_price)}
+            </span>
+            {!isMobile && <Separator orientation="vertical" />}
             {isCancelled && (
               <Badge variant="destructive">
                 Cancelled
@@ -124,49 +174,6 @@ export function BookingCard({ booking }: IProps) {
               </Button>
             )}
           </div>
-        </div>
-
-        {/* row 2: venue + date */}
-        <div className="flex flex-wrap items-center gap-x-4 gap-y-2 text-xs text-muted-foreground">
-          <span className="inline-flex items-center gap-1">
-            <MapPin className="h-3.5 w-3.5 shrink-0" />
-            {booking.event.venue}
-          </span>
-          <span className="inline-flex items-center gap-1">
-            <CalendarDays className="h-3.5 w-3.5 shrink-0" />
-            {formattedEventDate}
-          </span>
-        </div>
-
-        <Separator className="my-2" />
-
-        {/* row 3: ticket breakdown */}
-        {ticketSummary(booking) && (
-          <div className="flex items-center gap-1.5 text-xs text-muted-foreground">
-            <Ticket className="h-3.5 w-3.5 shrink-0" />
-            <span className="truncate">{ticketSummary(booking)}</span>
-          </div>
-        )}
-
-        <Separator className="mt-auto mb-2" />
-
-        {/* row 4: count + total */}
-        <div className="flex items-center justify-between text-sm">
-          <div className="flex items-center gap-1.5 shrink-0">
-            <span className="text-muted-foreground">
-              {booking.ticket_count}{" "}
-              {booking.ticket_count === 1 ? "ticket" : "tickets"}
-            </span>
-            <Separator orientation="vertical" className="mx-1" />
-            <span className="inline-flex items-center gap-1 text-muted-foreground">
-              {isCancelled ? "canceled on" : "booked on"}
-              <CalendarDays className="h-3.5 w-3.5 shrink-0" />
-              {dateFormat.format(new Date(isCancelled ? booking.updated_at : booking.created_at))}
-            </span>
-          </div>
-          <span className="font-semibold">
-            {usd.format(booking.total_price)}
-          </span>
         </div>
       </CardContent>
     </Card>

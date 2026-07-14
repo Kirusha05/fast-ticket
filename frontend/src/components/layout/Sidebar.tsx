@@ -1,6 +1,6 @@
 import { Link, useLocation } from "@tanstack/react-router";
 import { useAuth0 } from "@auth0/auth0-react";
-import { CalendarIcon, HomeIcon, LogInIcon, UserIcon } from "lucide-react";
+import { CalendarIcon, LogInIcon, UserIcon } from "lucide-react";
 
 import {
   Sidebar as SidebarPrimitive,
@@ -14,16 +14,14 @@ import {
   SidebarMenuItem,
 } from "@/components/ui/sidebar";
 import { UserMenu } from "./UserMenu";
-
-const NAV_ITEMS = [
-  { to: "/", label: "Home", icon: HomeIcon },
-  { to: "/events", label: "Events", icon: CalendarIcon },
-] as const;
+import { NAV_ITEMS } from "./nav-items";
+import { useIsAdmin } from "@/features/common/auth/hooks/useIsAdmin";
 
 export function AppSidebar() {
   const { isLoading, isAuthenticated, user, loginWithRedirect } =
     useAuth0();
   const location = useLocation();
+  const isAdmin = useIsAdmin();
 
   return (
     <SidebarPrimitive collapsible="icon" variant="sidebar">
@@ -51,7 +49,11 @@ export function AppSidebar() {
         <SidebarGroup>
           <SidebarGroupContent>
             <SidebarMenu className="gap-1">
-              {NAV_ITEMS.map((item) => (
+              {NAV_ITEMS.filter(item => {
+                if (item.authRequired && !isAuthenticated) return false;
+                if (item.adminRequired && !isAdmin) return false;
+                return true;
+              }).map((item) => (
                 <SidebarMenuItem key={item.to}>
                   <SidebarMenuButton
                     asChild
