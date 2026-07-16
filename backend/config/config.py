@@ -1,6 +1,7 @@
 from enum import StrEnum
 from pydantic_settings import BaseSettings, SettingsConfigDict
 import os
+import stripe
 
 
 class Mode(StrEnum):
@@ -82,10 +83,27 @@ class Auth0Config(BaseSettings):
     )
 
 
+class StripeConfig(BaseSettings):
+    SECRET_KEY: str
+    PUBLISHABLE_KEY: str
+    WEBHOOK_SECRET: str
+    CURRENCY: str
+    RESERVATION_TTL_MINUTES: str
+    SUCCESS_URL: str
+    CANCEL_URL: str
+
+    model_config = SettingsConfigDict(
+        env_prefix="STRIPE_",
+        env_file=load_environment_from_file(),
+        extra="ignore",
+    )
+
+
 class Config(BaseSettings):
     MODE: Mode = get_environment()
     DB: DBConfig = DBConfig()
     AUTH0: Auth0Config = Auth0Config()
+    STRIPE: StripeConfig = StripeConfig()
 
     model_config = SettingsConfigDict(
         env_file=load_environment_from_file(),
@@ -97,4 +115,5 @@ config = Config()
 print("-" * 36)
 print("Loaded config: ", config.model_dump_json(indent=2))
 print("-" * 36)
-    
+
+stripe.api_key = config.STRIPE.SECRET_KEY
