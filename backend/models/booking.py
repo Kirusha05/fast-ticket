@@ -2,16 +2,29 @@ from pydantic import BaseModel, model_validator
 from datetime import datetime
 from models import BaseEntity, EntityId, Event, EventSeat, BookingTieredTicket
 from typing import ClassVar
+from enum import Enum
+
+
+class BookingStatus(str, Enum):
+    PENDING = "pending"
+    CONFIRMED = "confirmed"
+    PAYMENT_FAILED = "payment_failed"
+    EXPIRED = "expired"
+    CANCELLED = "cancelled"
 
 
 class Booking(BaseEntity):
-    entity_id_prefix: ClassVar[str] = 'b'
+    entity_id_prefix: ClassVar[str] = "b"
 
     user_id: EntityId
     event_id: EntityId
-    status: str  # confirmed etc.
     ticket_count: int
     total_price: float = 0.0
+    currency: str = "usd"
+    status: BookingStatus
+    expires_at: datetime | None
+    stripe_checkout_session_id: str | None
+    stripe_payment_intent_id: str | None
 
     # Join fields
     event: Event | None = None
@@ -32,7 +45,7 @@ class CreateBookingRequest(BaseModel):
     seat_ids: list[str] | None = None
     tiered_tickets: list[TicketInput] | None = None
 
-    @model_validator(mode='after')
+    @model_validator(mode="after")
     def validate_booking_type(self):
         if self.seat_ids is None and self.tiered_tickets is None:
             raise ValueError("Must provide either seat_ids or tiered_tickets")

@@ -9,7 +9,7 @@ from repositories import (
     EventTiersRepository,
     BookingTieredTicketsRepository
 )
-from models import Booking, EntityId, Event, CreateBookingRequest, EventType, EventSeat, BookingResponse
+from models import Booking, BookingStatus, EntityId, Event, CreateBookingRequest, EventType, EventSeat, BookingResponse
 
 
 class BookingsUseCase:
@@ -83,7 +83,7 @@ class BookingsUseCase:
             id=Booking.generate_entity_id(),
             user_id=user_id,
             event_id=event.id,
-            status="confirmed",
+            status=BookingStatus.CONFIRMED,
             ticket_count=len(seats),
             total_price=total_price,
             seated_tickets=seats
@@ -166,7 +166,7 @@ class BookingsUseCase:
             id=Booking.generate_entity_id(),
             user_id=user_id,
             event_id=event.id,
-            status="confirmed",
+            status=BookingStatus.CONFIRMED,
             ticket_count=total_ticket_count,
             total_price=total_price
         )
@@ -249,7 +249,7 @@ class BookingsUseCase:
         if booking.user_id.value != user_id.value:
             raise HTTPException(status_code=403, detail="You are not allowed to cancel this booking")
 
-        if booking.status == "cancelled":
+        if booking.status == BookingStatus.CANCELLED:
             raise HTTPException(status_code=400, detail="Booking already cancelled")
 
         event = await self._events_repository.get_by_id(booking.event_id)
@@ -274,7 +274,7 @@ class BookingsUseCase:
             await self._booking_tiered_tickets_repository.delete_by_booking_id(booking_id)
             await self._events_repository.increment_available_tickets(event.id, booking.ticket_count)
 
-        booking.status = "cancelled"
+        booking.status = BookingStatus.CANCELLED
         updated_booking = await self._bookings_repository.update(booking_id, booking)
 
         enriched = await self._enrich_bookings([updated_booking])

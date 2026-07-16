@@ -1,6 +1,6 @@
 from repositories.base import BaseRepository
 from psycopg import AsyncConnection
-from models import Booking, EntityId, User, Event, EventSeat, BookingTieredTicket, EventTier
+from models import Booking, BookingStatus, EntityId, User, Event, EventSeat, BookingTieredTicket, EventTier
 
 
 class BookingsRepository(BaseRepository):
@@ -13,9 +13,13 @@ class BookingsRepository(BaseRepository):
             id=Booking.build_entity_id_from_uuid(booking_row['id']),
             user_id=User.build_entity_id_from_uuid(booking_row['user_id']),
             event_id=Event.build_entity_id_from_uuid(booking_row['event_id']),
-            status=booking_row['status'],
             ticket_count=booking_row['ticket_count'],
             total_price=float(booking_row['total_price']) if booking_row.get('total_price') else 0.0,
+            currency=booking_row['currency'],
+            status=booking_row['status'],
+            expires_at=booking_row['expires_at'],
+            stripe_checkout_session_id=booking_row['stripe_checkout_session_id'],
+            stripe_payment_intent_id=booking_row['stripe_payment_intent_id'],
             event=None,
             seated_tickets=seated_tickets or [],
             tiered_tickets=tiered_tickets or [],
@@ -47,12 +51,13 @@ class BookingsRepository(BaseRepository):
     async def create(self, booking: Booking) -> Booking | None:
         async with self.db_session.cursor() as cursor:
             await cursor.execute("""
-                INSERT INTO bookings (id, user_id, event_id, status, ticket_count, total_price)
-                VALUES (%s, %s, %s, %s, %s, %s)
+                INSERT INTO bookings (id, user_id, event_id, ticket_count, total_price, currency, status, expires_at, stripe_checkout_session_id, stripe_payment_intent_id)
+                VALUES (%s, %s, %s, %s, %s, %s, %s, %s, %s, %s)
                 RETURNING *
             """,
                 (booking.id.value, booking.user_id.value, booking.event_id.value,
-                 booking.status, booking.ticket_count, booking.total_price))
+                 booking.ticket_count, booking.total_price, booking.currency, booking.status, 
+                 booking.expires_at, booking.stripe_checkout_session_id, booking.stripe_payment_intent_id))
             db_booking = await cursor.fetchone()
             if not db_booking:
                 return None
@@ -63,6 +68,19 @@ class BookingsRepository(BaseRepository):
             await cursor.execute("""
                 SELECT * FROM bookings
                 WHERE id = %s
+            """, (id.value,))
+            db_booking = await cursor.fetchone()
+            if not db_booking:
+                return None
+            return self._map_db_model_to_entity(db_booking)
+    
+    # Will be used for Stripe webhook idempotency
+    async def get_by_id_for_update(self, id: EntityId) -> Booking | None:
+        async with self.db_session.cursor() as cursor:
+            await cursor.execute("""
+                SELECT * FROM bookings
+                WHERE id = %s
+                FOR UPDATE
             """, (id.value,))
             db_booking = await cursor.fetchone()
             if not db_booking:
@@ -79,12 +97,31 @@ class BookingsRepository(BaseRepository):
         async with self.db_session.cursor() as cursor:
             await cursor.execute("""
                 UPDATE bookings
-                SET user_id = %s, event_id = %s, status = %s, ticket_count = %s, total_price = %s, updated_at = NOW()
+                SET 
+                    status = %s,
+                    expires_at = %s,
+                    stripe_checkout_session_id = %s,
+                    stripe_payment_intent_id = %s,
+                    updated_at = NOW()
                 WHERE id = %s
                 RETURNING *
             """,
-                (booking.user_id.value, booking.event_id.value, booking.status,
-                 booking.ticket_count, booking.total_price, id.value))
+                (booking.status, booking.expires_at, booking.stripe_checkout_session_id, 
+                booking.stripe_payment_intent_id, id.value))
+            db_booking = await cursor.fetchone()
+            if not db_booking:
+                return None
+            return self._map_db_model_to_entity(db_booking)
+    
+    async def update_status(self, id: EntityId, status: BookingStatus) -> Booking | None:
+        async with self.db_session.cursor() as cursor:
+            await cursor.execute("""
+                UPDATE bookings
+                SET status = %s
+                WHERE id = %s
+                RETURNING *
+            """,
+                (status, id.value))
             db_booking = await cursor.fetchone()
             if not db_booking:
                 return None

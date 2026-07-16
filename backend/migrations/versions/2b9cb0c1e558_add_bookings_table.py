@@ -19,14 +19,22 @@ depends_on: Union[str, Sequence[str], None] = None
 
 
 def upgrade() -> None:
+    booking_status_enum = sa.Enum('pending', 'confirmed', 'payment_failed', 'expired', 'cancelled', name='booking_status')
+
     op.create_table(
         'bookings',
         sa.Column('id', sa.UUID(as_uuid=True), primary_key=True, nullable=False),
         sa.Column('user_id', sa.UUID(as_uuid=True), sa.ForeignKey('users.id', ondelete='CASCADE'), nullable=False),
         sa.Column('event_id', sa.UUID(as_uuid=True), sa.ForeignKey('events.id', ondelete='CASCADE'), nullable=False),
-        sa.Column('status', sa.String(length=20), default='confirmed', nullable=False),
         sa.Column('ticket_count', sa.Integer(), nullable=False),
+
         sa.Column('total_price', sa.Numeric(10, 2), nullable=False),
+        sa.Column('currency', sa.CHAR(3), default='usd', nullable=False),
+        sa.Column('status', booking_status_enum, default='pending', nullable=False),
+        sa.Column('expires_at', sa.DateTime(), nullable=True),  # timestamp when the status will be set to 'expired'
+        sa.Column('stripe_checkout_session_id', sa.String(255), nullable=True),
+        sa.Column('stripe_payment_intent_id', sa.String(255), nullable=True),
+
         sa.Column('created_at', sa.DateTime(), server_default=sa.func.now(), nullable=False),
         sa.Column('updated_at', sa.DateTime(), server_default=sa.func.now(), nullable=False)
     )
@@ -34,3 +42,5 @@ def upgrade() -> None:
 
 def downgrade() -> None:
     op.drop_table('bookings')
+    booking_status_enum = sa.Enum(name='booking_status')
+    booking_status_enum.drop(op.get_bind())
