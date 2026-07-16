@@ -7,9 +7,27 @@ from repositories import (
     EventSeatsRepository,
     BookingSeatedTicketsRepository,
     EventTiersRepository,
-    BookingTieredTicketsRepository
+    BookingTieredTicketsRepository,
+    PaymentsRepository
 )
-from models import Booking, BookingStatus, EntityId, Event, CreateBookingRequest, EventType, EventSeat, BookingResponse
+from models import (
+    Booking,
+    BookingStatus,
+    EntityId,
+    Event,
+    CreateBookingRequest,
+    EventType,
+    EventSeat,
+    BookingResponse,
+    PaymentSessionResponse,
+    User,
+    Payment,
+    PaymentStatus
+)
+from datetime import datetime, timedelta, timezone
+import stripe
+from config.stripe_client import stripe_client
+from config.config import config
 
 
 class BookingsUseCase:
@@ -21,14 +39,7 @@ class BookingsUseCase:
         self._booking_seated_tickets_repository = BookingSeatedTicketsRepository(db_session)
         self._event_tiers_repository = EventTiersRepository(db_session)
         self._booking_tiered_tickets_repository = BookingTieredTicketsRepository(db_session)
-
-    def _map_entity_to_response(self, booking: Booking):
-        return BookingResponse(
-            id=booking.id,
-            status=booking.status,
-            ticket_count=booking.ticket_count,
-            total_price=booking.total_price
-        )
+        self._payments_repository = PaymentsRepository(db_session)
 
     async def create_booking(self, user_id: EntityId, booking_request: CreateBookingRequest) -> BookingResponse:
         event_id = EntityId.from_string(booking_request.event_id)
@@ -54,7 +65,6 @@ class BookingsUseCase:
         self, user_id: EntityId, event: Event, booking_request: CreateBookingRequest
     ) -> BookingResponse:
         seat_ids = [EntityId.from_string(sid) for sid in booking_request.seat_ids]
-
         seats = await self._event_seats_repository.get_seats_by_ids_for_update(seat_ids)
 
         if len(seats) != len(seat_ids):
@@ -83,10 +93,13 @@ class BookingsUseCase:
             id=Booking.generate_entity_id(),
             user_id=user_id,
             event_id=event.id,
-            status=BookingStatus.CONFIRMED,
             ticket_count=len(seats),
             total_price=total_price,
-            seated_tickets=seats
+            currency="usd",
+            status=BookingStatus.PENDING,
+            expires_at=datetime.now() + timedelta(hours=config.BOOKING_RESERVATION_TTL_HOURS),
+            stripe_checkout_session_id=None,
+            stripe_payment_intent_id=None
         )
 
         created_booking = await self._bookings_repository.create(booking)
@@ -166,9 +179,13 @@ class BookingsUseCase:
             id=Booking.generate_entity_id(),
             user_id=user_id,
             event_id=event.id,
-            status=BookingStatus.CONFIRMED,
             ticket_count=total_ticket_count,
-            total_price=total_price
+            total_price=total_price,
+            currency="usd",
+            status=BookingStatus.PENDING,
+            expires_at=datetime.now() + timedelta(hours=config.BOOKING_RESERVATION_TTL_HOURS),
+            stripe_checkout_session_id=None,
+            stripe_payment_intent_id=None
         )
 
         created_booking = await self._bookings_repository.create(booking)
@@ -241,6 +258,154 @@ class BookingsUseCase:
         enriched = await self._enrich_bookings(bookings)
         return enriched
 
+    async def create_payment_session(self, current_user: User, booking_id: EntityId) -> PaymentSessionResponse:
+        booking = await self._bookings_repository.get_by_id_for_update(booking_id)
+        if not booking:
+            raise HTTPException(status_code=404, detail="Booking not found")
+
+        if booking.user_id.value != current_user.id.value:
+            raise HTTPException(status_code=403, detail="You are not allowed to access this booking")
+        
+        if booking.status not in [BookingStatus.PENDING, BookingStatus.PAYMENT_FAILED]:
+             raise HTTPException(status_code=409, detail="You cannot pay for this booking")
+
+        if booking.expires_at and booking.expires_at < datetime.now(timezone.utc):
+            booking.status = BookingStatus.EXPIRED
+            await self._bookings_repository.update(booking_id, booking)
+            raise HTTPException(status_code=409, detail="Booking expired")
+
+        event = await self._events_repository.get_by_id(booking.event_id)
+        if not event:
+            raise HTTPException(status_code=404, detail="Event no longer exists")
+        
+        try:
+            amount_cents = int(booking.total_price * 100)
+            session = await stripe_client.v1.checkout.sessions.create_async(
+                {
+                    "mode": "payment",
+                    "line_items": [
+                        {
+                            "price_data": {
+                                "currency": "usd",
+                                "unit_amount": amount_cents,
+                                "product_data": {"name": f"Tickets - {event.name}"},
+                            },
+                            "quantity": 1,
+                        }
+                    ],
+                    "success_url": config.STRIPE.SUCCESS_URL,
+                    "cancel_url": config.STRIPE.CANCEL_URL,
+                    "expires_at": int(booking.expires_at.timestamp() - (2 * 60)),  # expire 2 min earlier
+                    "client_reference_id": str(booking_id),
+                    "metadata": {"booking_id": str(booking_id)}
+                }
+            )
+        except stripe.StripeError as e:
+            raise HTTPException(status_code=400, detail=str(e))
+
+        booking.stripe_checkout_session_id = session.id
+        # booking.status stays 'pending'
+        await self._bookings_repository.update(booking_id, booking)
+
+        new_payment = Payment(
+            id=Payment.generate_entity_id(),
+            booking_id=booking_id,
+            stripe_checkout_session_id=session.id,
+            stripe_payment_intent_id=None,
+            amount_cents=amount_cents,
+            currency="usd",
+            status=PaymentStatus.PENDING
+        )
+        await self._payments_repository.create(new_payment)
+
+        return PaymentSessionResponse(
+            checkout_url=session.url,
+            session_id=session.id
+        )
+
+    # will be called by the Stripe webhook, MUST return status 2xx
+    async def confirm_booking(self, booking_id: EntityId, stripe_session_id: str, stripe_payment_intent_id: str):
+        booking = await self._bookings_repository.get_by_id_for_update(booking_id)
+        if not booking:
+            return
+        
+        # Return (status 200) if booking was already confirmed (network errors may result in the webhook being called twice)
+        if booking.status == BookingStatus.CONFIRMED:
+            return
+
+        booking.status = BookingStatus.CONFIRMED
+        booking.stripe_payment_intent_id = stripe_payment_intent_id
+        booking.expires_at = None
+        await self._bookings_repository.update(booking_id, booking)
+
+        payment = await self._payments_repository.get_by_stripe_session_id(stripe_session_id)
+        payment.status = PaymentStatus.SUCCEEDED
+        payment.stripe_payment_intent_id = stripe_payment_intent_id
+        await self._payments_repository.update(payment.id, payment)
+
+    async def _release_booking_resources(self, booking: Booking, throw = True):
+        event = await self._events_repository.get_by_id(booking.event_id)
+        if not event:
+            if not throw:
+                return
+            raise HTTPException(status_code=404, detail="Event no longer exists")
+
+        if event.event_type == EventType.SEATED:
+            seated_tickets = await self._booking_seated_tickets_repository.get_seated_tickets_by_booking_ids([booking.id])
+            seat_ids = [seated_ticket.id for seated_ticket in seated_tickets]
+            if seat_ids:
+                await self._event_seats_repository.mark_seats_as_available(seat_ids)
+                await self._booking_seated_tickets_repository.delete_by_booking_id(booking.id)
+                await self._events_repository.increment_available_tickets(event.id, booking.ticket_count)
+
+        elif event.event_type == EventType.OPEN_FIELD:
+            tiered_tickets = await self._booking_tiered_tickets_repository.get_tiered_tickets_by_booking_ids([booking.id])
+
+            tier_counts = Counter(tt.tier_id.value for tt in tiered_tickets)
+            for tier_uuid, count in tier_counts.items():
+                tier_id = EntityId.from_uuid(tier_uuid, prefix='et')
+                await self._event_tiers_repository.increment_available_tickets(tier_id, count)
+            await self._booking_tiered_tickets_repository.delete_by_booking_id(booking.id)
+            await self._events_repository.increment_available_tickets(event.id, booking.ticket_count)
+
+    # will be called by the Stripe webhook, MUST return status 2xx
+    async def expire_booking(self, booking_id: EntityId, stripe_session_id: str):
+        booking = await self._bookings_repository.get_by_id_for_update(booking_id)
+        if not booking:
+            return
+        
+        # Return (status 200) if booking was already confirmed/expired/cancelled
+        if booking.status in [BookingStatus.EXPIRED, BookingStatus.CONFIRMED, BookingStatus.CANCELLED]:
+            return
+
+        booking.status = BookingStatus.EXPIRED
+        booking.expires_at = None
+        await self._bookings_repository.update(booking_id, booking)
+
+        await self._release_booking_resources(booking, throw=False)  # make sure to not throw
+
+        payment = await self._payments_repository.get_by_stripe_session_id(stripe_session_id)
+        payment.status = PaymentStatus.EXPIRED
+        await self._payments_repository.update(payment.id, payment)
+
+    # will be called by the Stripe webhook, MUST return status 2xx
+    async def mark_as_payment_failed(self, booking_id: EntityId, stripe_session_id: str):
+        booking = await self._bookings_repository.get_by_id(booking_id)
+        if not booking:
+            return
+        
+        # this method will just update the payment status to FAILED and the booking status to PAYMENT_FAILED
+        if booking.status != BookingStatus.PENDING:
+            return
+        
+        booking.status = BookingStatus.PAYMENT_FAILED
+        await self._bookings_repository.update(booking_id, booking)
+
+        payment = await self._payments_repository.get_by_stripe_session_id(stripe_session_id)
+        payment.status = PaymentStatus.FAILED
+        await self._payments_repository.update(payment.id, payment)
+
+    # will be called by the user
     async def cancel_booking(self, user_id: EntityId, booking_id: EntityId) -> BookingResponse:
         booking = await self._bookings_repository.get_by_id(booking_id)
         if not booking:
@@ -251,30 +416,16 @@ class BookingsUseCase:
 
         if booking.status == BookingStatus.CANCELLED:
             raise HTTPException(status_code=400, detail="Booking already cancelled")
+        
+        if booking.status not in [BookingStatus.PENDING, BookingStatus.PAYMENT_FAILED]:
+            # For now, the user will be able to cancel only pending booking or the ones with failed payment
+            # Confirmed bookings will not be cancellable (this already requires a refund, to be implemented later)
+             raise HTTPException(status_code=409, detail="You cannot cancel this booking")
 
-        event = await self._events_repository.get_by_id(booking.event_id)
-        if not event:
-            raise HTTPException(status_code=404, detail="Event no longer exists")
-
-        if event.event_type == EventType.SEATED:
-            seated_tickets = await self._booking_seated_tickets_repository.get_seated_tickets_by_booking_ids([booking.id])
-            seat_ids = [seated_ticket.id for seated_ticket in seated_tickets]
-            if seat_ids:
-                await self._event_seats_repository.mark_seats_as_available(seat_ids)
-                await self._booking_seated_tickets_repository.delete_by_booking_id(booking_id)
-                await self._events_repository.increment_available_tickets(event.id, booking.ticket_count)
-
-        elif event.event_type == EventType.OPEN_FIELD:
-            tiered_tickets = await self._booking_tiered_tickets_repository.get_tiered_tickets_by_booking_ids([booking.id])
-
-            tier_counts = Counter(tt.tier_id.value for tt in tiered_tickets)
-            for tier_uuid, count in tier_counts.items():
-                tier_id = EntityId.from_uuid(tier_uuid, prefix='et')
-                await self._event_tiers_repository.increment_available_tickets(tier_id, count)
-            await self._booking_tiered_tickets_repository.delete_by_booking_id(booking_id)
-            await self._events_repository.increment_available_tickets(event.id, booking.ticket_count)
+        await self._release_booking_resources(booking)
 
         booking.status = BookingStatus.CANCELLED
+        booking.expires_at = None
         updated_booking = await self._bookings_repository.update(booking_id, booking)
 
         enriched = await self._enrich_bookings([updated_booking])

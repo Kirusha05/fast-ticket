@@ -36,7 +36,7 @@ async def test_booking_list_for_user(
         await db_session.execute(f.read())
     with open('tests/data/seats.sql') as f:
         await db_session.execute(f.read())
-    with open('tests/data/booking.sql') as f:
+    with open('tests/data/booking_confirmed.sql') as f:
         await db_session.execute(f.read())
         await db_session.commit()
 

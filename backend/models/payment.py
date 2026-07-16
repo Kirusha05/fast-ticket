@@ -2,14 +2,14 @@ from datetime import datetime
 from models import BaseEntity, EntityId
 from typing import ClassVar
 from enum import Enum
+from pydantic import BaseModel
 
 
 class PaymentStatus(str, Enum):
     PENDING = "pending"
-    CONFIRMED = "confirmed"
-    PAYMENT_FAILED = "payment_failed"
+    SUCCEEDED = "succeeded"
+    FAILED = "failed"
     EXPIRED = "expired"
-    CANCELLED = "cancelled"
 
 
 class Payment(BaseEntity):
@@ -24,3 +24,8 @@ class Payment(BaseEntity):
 
     created_at: datetime | None = None
     updated_at: datetime | None = None
+
+
+class PaymentSessionResponse(BaseModel):
+    checkout_url: str
+    session_id: str

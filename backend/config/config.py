@@ -88,7 +88,6 @@ class StripeConfig(BaseSettings):
     PUBLISHABLE_KEY: str
     WEBHOOK_SECRET: str
     CURRENCY: str
-    RESERVATION_TTL_MINUTES: str
     SUCCESS_URL: str
     CANCEL_URL: str
 
@@ -104,6 +103,7 @@ class Config(BaseSettings):
     DB: DBConfig = DBConfig()
     AUTH0: Auth0Config = Auth0Config()
     STRIPE: StripeConfig = StripeConfig()
+    BOOKING_RESERVATION_TTL_HOURS: int
 
     model_config = SettingsConfigDict(
         env_file=load_environment_from_file(),

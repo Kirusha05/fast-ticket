@@ -31,7 +31,7 @@ def upgrade() -> None:
         sa.Column('total_price', sa.Numeric(10, 2), nullable=False),
         sa.Column('currency', sa.CHAR(3), default='usd', nullable=False),
         sa.Column('status', booking_status_enum, default='pending', nullable=False),
-        sa.Column('expires_at', sa.DateTime(), nullable=True),  # timestamp when the status will be set to 'expired'
+        sa.Column('expires_at', sa.DateTime(timezone=True), nullable=True),  # timestamp when the status will be set to 'expired'
         sa.Column('stripe_checkout_session_id', sa.String(255), nullable=True),
         sa.Column('stripe_payment_intent_id', sa.String(255), nullable=True),
 

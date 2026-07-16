@@ -1,6 +1,6 @@
 from repositories.base import BaseRepository
 from psycopg import AsyncConnection
-from models import Booking, BookingStatus, EntityId, User, Event, EventSeat, BookingTieredTicket, EventTier
+from models import Booking, EntityId, User, Event, EventSeat, BookingTieredTicket, EventTier
 
 
 class BookingsRepository(BaseRepository):
@@ -108,20 +108,6 @@ class BookingsRepository(BaseRepository):
             """,
                 (booking.status, booking.expires_at, booking.stripe_checkout_session_id, 
                 booking.stripe_payment_intent_id, id.value))
-            db_booking = await cursor.fetchone()
-            if not db_booking:
-                return None
-            return self._map_db_model_to_entity(db_booking)
-    
-    async def update_status(self, id: EntityId, status: BookingStatus) -> Booking | None:
-        async with self.db_session.cursor() as cursor:
-            await cursor.execute("""
-                UPDATE bookings
-                SET status = %s
-                WHERE id = %s
-                RETURNING *
-            """,
-                (status, id.value))
             db_booking = await cursor.fetchone()
             if not db_booking:
                 return None

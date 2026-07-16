@@ -47,7 +47,7 @@ async def test_booking_create_open_field(test_client: TestClient, db_session: As
     assert response.status_code == 201
     assert data["id"] is not None
     assert data["event"]["id"] == event_id
-    assert data["status"] == "confirmed"
+    assert data["status"] == "pending"
     assert data["ticket_count"] == 2
     assert data["total_price"] == 100.0
     assert len(data["seated_tickets"]) == 0
@@ -104,7 +104,6 @@ async def test_booking_create_seated(test_client: TestClient, db_session: AsyncC
         await db_session.commit()
 
     override_current_user_dummy()  # bypass authorization
-    user_id = "u-11111111-1111-1111-1111-111111111111"
     event_id = "e-22222222-2222-2222-2222-222222222222"
     seat_ids = [
         "es-aaaaaaaa-aaaa-aaaa-aaaa-aaaaaaaaaaaa",
@@ -123,7 +122,7 @@ async def test_booking_create_seated(test_client: TestClient, db_session: AsyncC
     assert response.status_code == 201
     assert data["id"] is not None
     assert data["event"]["id"] == event_id
-    assert data["status"] == "confirmed"
+    assert data["status"] == "pending"
     assert data["ticket_count"] == 2
     assert data["total_price"] == 300.0
     assert len(data["seated_tickets"]) == 2
@@ -295,7 +294,7 @@ async def test_booking_create_seated_seat_already_taken(
         await db_session.execute(f.read())
     with open('tests/data/tiers.sql') as f:
         await db_session.execute(f.read())
-    with open('tests/data/booking.sql') as f:
+    with open('tests/data/booking_confirmed.sql') as f:
         await db_session.execute(f.read())
         await db_session.commit()
 
@@ -365,3 +364,6 @@ async def test_booking_create_open_field_zero_tickets(
 
     assert response.status_code == 422
     assert "Ticket count must be at least 1" in str(data["detail"])
+
+
+# TODO: test booking tickets for an event with zero left tickets

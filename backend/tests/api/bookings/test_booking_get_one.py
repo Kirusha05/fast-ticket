@@ -41,7 +41,7 @@ async def test_booking_get_own(
         await db_session.execute(f.read())
     with open('tests/data/tiers.sql') as f:
         await db_session.execute(f.read())
-    with open('tests/data/booking.sql') as f:
+    with open('tests/data/booking_confirmed.sql') as f:
         await db_session.execute(f.read())
         await db_session.commit()
 
@@ -96,7 +96,7 @@ async def test_booking_get_not_own(
         await db_session.execute(f.read())
     with open('tests/data/tiers.sql') as f:
         await db_session.execute(f.read())
-    with open('tests/data/booking.sql') as f:
+    with open('tests/data/booking_confirmed.sql') as f:
         await db_session.execute(f.read())
         await db_session.commit()
 

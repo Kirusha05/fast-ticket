@@ -1,6 +1,6 @@
 from repositories.base import BaseRepository
 from psycopg import AsyncConnection
-from models import Payment, PaymentStatus, Booking, EntityId
+from models import Payment, Booking, EntityId
 
 
 class PaymentsRepository(BaseRepository):
@@ -26,10 +26,10 @@ class PaymentsRepository(BaseRepository):
                 INSERT INTO payments (
                     id, booking_id, stripe_checkout_session_id, stripe_payment_intent_id, amount_cents, currency, status
                 ) 
-                VALUES (%s, %s, %s, %s, %s)
+                VALUES (%s, %s, %s, %s, %s, %s, %s)
                 RETURNING *
             """,
-            (payment.id.value, payment.booking_id, payment.stripe_checkout_session_id, payment.stripe_payment_intent_id, 
+            (payment.id.value, payment.booking_id.value, payment.stripe_checkout_session_id, payment.stripe_payment_intent_id, 
             payment.amount_cents, payment.currency, payment.status))
             db_payment = await cursor.fetchone()
             if not db_payment:
@@ -58,16 +58,18 @@ class PaymentsRepository(BaseRepository):
     async def get_all(self):
         pass
 
-    async def update(self):
-        pass
-
-    async def update_status(self, id: EntityId, status: PaymentStatus) -> Payment | None:
+    async def update(self, id: EntityId, payment: Payment) -> Payment | None:
         async with self.db_session.cursor() as cursor:
             await cursor.execute("""
-                UPDATE payments SET status = %s, updated_at = NOW() WHERE id = %s
+                UPDATE payments
+                SET 
+                    status = %s,
+                    stripe_payment_intent_id = %s,
+                    updated_at = NOW()
+                WHERE id = %s
                 RETURNING *
             """,
-            (status, id.value))
+                (payment.status, payment.stripe_payment_intent_id, id.value))
             db_payment = await cursor.fetchone()
             if not db_payment:
                 return None

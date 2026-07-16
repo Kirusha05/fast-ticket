@@ -3,7 +3,7 @@ from psycopg import AsyncConnection
 import json
 
 
-async def test_booking_cancel_seated(
+async def test_booking_cancel_seated_status_pending(
     test_client: TestClient, db_session: AsyncConnection, override_current_user_dummy
 ):
     """
@@ -25,7 +25,7 @@ async def test_booking_cancel_seated(
         - A2 (es-bbbb...), $150, is_available = FALSE  <- taken by booking #2
         - B1 (es-cccc...), $120, is_available = TRUE
 
-      Pre-existing bookings (all confirmed):
+      Pre-existing bookings (all pending):
         #1 (b-10000000-...-001): User 1, Summerfest, 2x General @ $50 = $100
         #2 (b-10000000-...-002): User 1, Opera Night, A1+A2 @ $150 ea = $300
         #3 (b-10000000-...-003): User 2, Summerfest, 1x General @ $50
@@ -41,7 +41,7 @@ async def test_booking_cancel_seated(
         await db_session.execute(f.read())
     with open('tests/data/tiers.sql') as f:
         await db_session.execute(f.read())
-    with open('tests/data/booking.sql') as f:
+    with open('tests/data/booking_pending.sql') as f:
         await db_session.execute(f.read())
         await db_session.commit()
 
@@ -87,7 +87,7 @@ async def test_booking_cancel_seated(
     assert row['available_tickets'] == 1000  # were 998 before, 2 tickets got cancelled
 
 
-async def test_booking_cancel_open_field(
+async def test_booking_cancel_open_field_status_pending(
     test_client: TestClient, db_session: AsyncConnection, override_current_user_dummy
 ):
     """
@@ -104,7 +104,7 @@ async def test_booking_cancel_open_field(
       Tiers (for Summerfest):
         - General (et-77777777-...), $50, 9997 available (was 10000, 3 taken)
 
-      Pre-existing bookings (all confirmed):
+      Pre-existing bookings (all pending):
         #1 (b-10000000-...-001): User 1, Summerfest, 2x General @ $50 = $100
         #2 (b-10000000-...-002): User 1, Opera Night, A1+A2 @ $150 ea = $300
         #3 (b-10000000-...-003): User 2, Summerfest, 1x General @ $50
@@ -120,7 +120,7 @@ async def test_booking_cancel_open_field(
         await db_session.execute(f.read())
     with open('tests/data/tiers.sql') as f:
         await db_session.execute(f.read())
-    with open('tests/data/booking.sql') as f:
+    with open('tests/data/booking_pending.sql') as f:
         await db_session.execute(f.read())
         await db_session.commit()
 
@@ -179,7 +179,7 @@ async def test_booking_cancel_open_field_not_own(
       Tiers (for Summerfest):
         - General (et-77777777-...), $50, 9997 available (was 10000, 3 taken)
 
-      Pre-existing bookings (all confirmed):
+      Pre-existing bookings (all pending):
         #1 (b-10000000-...-001): User 1, Summerfest, 2x General @ $50 = $100
         #2 (b-10000000-...-002): User 1, Opera Night, A1+A2 @ $150 ea = $300
         #3 (b-10000000-...-003): User 2, Summerfest, 1x General @ $50
@@ -195,7 +195,7 @@ async def test_booking_cancel_open_field_not_own(
         await db_session.execute(f.read())
     with open('tests/data/tiers.sql') as f:
         await db_session.execute(f.read())
-    with open('tests/data/booking.sql') as f:
+    with open('tests/data/booking_confirmed.sql') as f:
         await db_session.execute(f.read())
         await db_session.commit()
 
@@ -229,7 +229,7 @@ async def test_booking_cancel_twice(
       Tiers (for Summerfest):
         - General (et-77777777-...), $50, 9997 available (was 10000, 3 taken)
 
-      Pre-existing bookings (all confirmed):
+      Pre-existing bookings (all pending):
         #1 (b-10000000-...-001): User 1, Summerfest, 2x General @ $50 = $100
         #2 (b-10000000-...-002): User 1, Opera Night, A1+A2 @ $150 ea = $300
         #3 (b-10000000-...-003): User 2, Summerfest, 1x General @ $50
@@ -245,7 +245,7 @@ async def test_booking_cancel_twice(
         await db_session.execute(f.read())
     with open('tests/data/tiers.sql') as f:
         await db_session.execute(f.read())
-    with open('tests/data/booking.sql') as f:
+    with open('tests/data/booking_pending.sql') as f:
         await db_session.execute(f.read())
         await db_session.commit()
 
@@ -269,3 +269,57 @@ async def test_booking_cancel_twice(
 
     assert response.status_code == 400
     assert data['detail'] == "Booking already cancelled"
+
+
+async def test_booking_cancel_confirmed(
+    test_client: TestClient, db_session: AsyncConnection, override_current_user_dummy
+):
+    """
+    Setup:
+      Users:
+        - User 1 (u-11111111-...), "Test User"
+        - User 2 (u-22222222-...), "Second User"
+
+      Events:
+        - Summerfest (e-11111111-...), open_field, 10000 total/available
+        - Opera Night (e-22222222-...), seated, 1000 available (took 2 -> 998)
+        - Rock Arena (e-33333333-...), seated, 500 total/available
+
+      Tiers (for Summerfest):
+        - General (et-77777777-...), $50, 9997 available (was 10000, 3 taken)
+
+      Seats (Opera Night):
+        - A1 (es-aaaa...), $150, is_available = FALSE  <- taken by booking #2
+        - A2 (es-bbbb...), $150, is_available = FALSE  <- taken by booking #2
+        - B1 (es-cccc...), $120, is_available = TRUE
+
+      Pre-existing bookings (all confirmed):
+        #1 (b-10000000-...-001): User 1, Summerfest, 2x General @ $50 = $100
+        #2 (b-10000000-...-002): User 1, Opera Night, A1+A2 @ $150 ea = $300
+        #3 (b-10000000-...-003): User 2, Summerfest, 1x General @ $50
+
+    Logged in as User 1.
+    Cancel booking #2 (seated - A1 & A2 on Opera Night).
+    """
+    with open('tests/data/user.sql') as f:
+        await db_session.execute(f.read())
+    with open('tests/data/event.sql') as f:
+        await db_session.execute(f.read())
+    with open('tests/data/seats.sql') as f:
+        await db_session.execute(f.read())
+    with open('tests/data/tiers.sql') as f:
+        await db_session.execute(f.read())
+    with open('tests/data/booking_confirmed.sql') as f:
+        await db_session.execute(f.read())
+        await db_session.commit()
+
+    override_current_user_dummy()  # bypass authorization, logged in as user 1
+
+    # cancel user 1's seated booking (seats A1 + A2)
+    booking_id = "b-10000000-0000-0000-0000-000000000002"
+
+    response = test_client.post(f"/bookings/{booking_id}/cancel")
+    data = response.json()
+
+    assert response.status_code == 409
+    assert "You cannot cancel this booking" in data["detail"]

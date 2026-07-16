@@ -8,7 +8,7 @@ from psycopg_pool import AsyncConnectionPool
 from config.config import config
 from routes.deps.auth import get_current_user
 
-# run tests with this:
+# run tests with:
 # MODE=test uv run pytest -v
 
 # scopes:
@@ -51,6 +51,7 @@ async def db_session(db_pool: AsyncConnectionPool) -> AsyncConnection:
 
         # delete all data from the tables for cleanup
         models = [
+            "payments",
             "booking_tiered_tickets",
             "booking_seated_tickets",
             "event_tiers",
@@ -72,9 +73,9 @@ async def db_session(db_pool: AsyncConnectionPool) -> AsyncConnection:
 
 @pytest.fixture
 def override_current_user_custom(test_client: TestClient):
-    def _ovveride(user: User):
+    def _override(user: User):
         app.dependency_overrides[get_current_user] = lambda: user
-    yield _ovveride
+    yield _override
     app.dependency_overrides.clear()
 
 
@@ -88,7 +89,7 @@ def override_current_user_dummy(test_client: TestClient):
         role=UserRole.USER
     )
 
-    def _ovveride():
+    def _override():
         app.dependency_overrides[get_current_user] = lambda: user
-    yield _ovveride
+    yield _override
     app.dependency_overrides.clear()
