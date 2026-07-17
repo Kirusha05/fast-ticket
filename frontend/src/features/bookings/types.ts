@@ -16,12 +16,16 @@ export interface BookingEventTier {
   tier_id: string;
 };
 
+export type BookingStatus = "pending" | "confirmed" | "payment_failed" | "expired" | "cancelled"
+
 export interface Booking {
   id: string;
-  status: string;
+  event_id: string;
   ticket_count: number;
   total_price: number;
-  event_id: string;
+  currency: string;
+  status: BookingStatus;
+  expires_at: string | null;
 
   event: Event;
   seated_tickets: BookingEventSeat[];
@@ -30,6 +34,11 @@ export interface Booking {
   created_at: string;
   updated_at: string;
 };
+
+export interface PaymentSessionResponse {
+  checkout_url: string;
+  session_id: string;
+}
 
 // API request types
 export interface TicketInput {

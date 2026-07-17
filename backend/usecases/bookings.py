@@ -288,7 +288,10 @@ class BookingsUseCase:
                             "price_data": {
                                 "currency": "usd",
                                 "unit_amount": amount_cents,
-                                "product_data": {"name": f"Tickets - {event.name}"},
+                                "product_data": {
+                                    "name": f"Tickets - {event.name}",
+                                    "description": f"{booking.ticket_count} ticket(s) for the event."
+                                },
                             },
                             "quantity": 1,
                         }
@@ -297,7 +300,11 @@ class BookingsUseCase:
                     "cancel_url": config.STRIPE.CANCEL_URL,
                     "expires_at": int(booking.expires_at.timestamp() - (2 * 60)),  # expire 2 min earlier
                     "client_reference_id": str(booking_id),
-                    "metadata": {"booking_id": str(booking_id)}
+                    "customer_email": current_user.email,
+                    "metadata": {"booking_id": str(booking_id)},  # accessible on session.* events
+                    "payment_intent_data": {
+                        "metadata": {"booking_id": str(booking_id)}  # accessible on payment_intent.* events
+                    }
                 }
             )
         except stripe.StripeError as e:
@@ -389,7 +396,7 @@ class BookingsUseCase:
         await self._payments_repository.update(payment.id, payment)
 
     # will be called by the Stripe webhook, MUST return status 2xx
-    async def mark_as_payment_failed(self, booking_id: EntityId, stripe_session_id: str):
+    async def mark_as_payment_failed(self, booking_id: EntityId, stripe_payment_intent_id: str):
         booking = await self._bookings_repository.get_by_id(booking_id)
         if not booking:
             return
@@ -401,6 +408,8 @@ class BookingsUseCase:
         booking.status = BookingStatus.PAYMENT_FAILED
         await self._bookings_repository.update(booking_id, booking)
 
+        # stripe_session_id is not accessible from the PaymentIntent response, would need to query Stripe API to get it
+        # by using the stripe_payment_intent_id
         payment = await self._payments_repository.get_by_stripe_session_id(stripe_session_id)
         payment.status = PaymentStatus.FAILED
         await self._payments_repository.update(payment.id, payment)

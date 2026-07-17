@@ -84,10 +84,12 @@ class BookingEventTier(BaseModel):
 
 class BookingResponse(BaseModel):
     id: EntityId
-    status: str
+    event_id: EntityId
     ticket_count: int
     total_price: float
-    event_id: EntityId
+    currency: str
+    status: BookingStatus
+    expires_at: datetime | None
 
     event: Event | None = None
     seated_tickets: list[BookingEventSeat] = []

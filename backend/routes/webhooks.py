@@ -27,26 +27,30 @@ async def stripe_webhook(
         raise HTTPException(status_code=400, detail="Invalid signature")
 
     event_type = event.type
+    print(f"STRIPE EVENT TYPE: {event_type}")
     data = event.data.object
     
-    stripe_session_id = data["id"]
     bookings_use_case = BookingsUseCase(db)
 
     if event_type == "checkout.session.completed":
-        booking_id_raw = data["metadata"].get("booking_id")
+        stripe_session_id = data["id"]
+        booking_id_raw = data["metadata"]["booking_id"]
         booking_id = EntityId.from_string(booking_id_raw)
         stripe_payment_intent_id = data["payment_intent"]
         await bookings_use_case.confirm_booking(booking_id, stripe_session_id, stripe_payment_intent_id)
 
     elif event_type == "checkout.session.expired":
-        booking_id_raw = data["metadata"].get("booking_id")
+        stripe_session_id = data["id"]
+        booking_id_raw = data["metadata"]["booking_id"]
         booking_id = EntityId.from_string(booking_id_raw)
         await bookings_use_case.expire_booking(booking_id, stripe_session_id)
     
-    elif event_type == "checkout.session.async_payment_failed":
-        booking_id_raw = data["metadata"].get("booking_id")
+    elif event_type == "payment_intent.payment_failed":
+        print(data)
+        stripe_payment_intent_id = data["id"]
+        booking_id_raw = data["metadata"]["booking_id"]
         booking_id = EntityId.from_string(booking_id_raw)
-        await bookings_use_case.mark_as_payment_failed(booking_id, stripe_session_id)
+        await bookings_use_case.mark_as_payment_failed(booking_id, stripe_payment_intent_id)
 
     # always return with status 200 (data doesn't matter) so Stripe doesn't keep retrying events we've already handled
     return { "success": True }

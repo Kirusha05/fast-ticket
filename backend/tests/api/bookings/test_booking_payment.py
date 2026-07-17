@@ -319,7 +319,7 @@ async def test_booking_payment_failed(
     stripe_payment_intent_id = "pi_test_10000000000000000000000002"
 
     fake_session = MagicMock()
-    fake_session.type = "checkout.session.async_payment_failed"  # event type sent by Stripe
+    fake_session.type = "payment_intent.payment_failed"  # event type sent by Stripe
     fake_session.data.object = {
         "id": stripe_checkout_session_id,
         "metadata": {

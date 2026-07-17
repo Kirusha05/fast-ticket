@@ -1,11 +1,12 @@
 import { CalendarDays, MapPin, Ticket, ExternalLink } from "lucide-react";
 import { Link } from "@tanstack/react-router";
-import type { Booking } from "@/features/bookings/types";
+import type { Booking, BookingStatus } from "@/features/bookings/types";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent } from "@/components/ui/card";
 import { Separator } from "@/components/ui/separator";
 import { useCancelBooking } from "@/features/bookings/hooks/useCancelBooking";
+import { useCreatePaymentSession } from "@/features/bookings/hooks/useCreatePaymentSession";
 import { cn } from "@/lib/utils";
 import { toast } from "sonner";
 import { useIsMobile } from "@/hooks/use-mobile";
@@ -49,13 +50,26 @@ function ticketSummary(booking: Booking) {
   return null;
 }
 
+const badgeColorMap: Record<BookingStatus, string> = {
+  pending: "bg-yellow-500",
+  confirmed: "bg-green-500",
+  cancelled: "bg-red-500",
+  expired: "bg-muted-500",
+  payment_failed: "bg-red-500"
+}
+
 interface IProps {
   booking: Booking;
 }
 
 export function BookingCard({ booking }: IProps) {
   const { mutate: cancelBooking, isPending: isCancelling } = useCancelBooking();
+  const { mutate: createPaymentSession, isPending: isCreatingPaymentSession } = useCreatePaymentSession(booking.id);
   const isMobile = useIsMobile();
+
+  const handlePayment = () => {
+    createPaymentSession();
+  }
 
   const handleCancelBooking = () => {
     cancelBooking(booking.id, {
@@ -69,6 +83,9 @@ export function BookingCard({ booking }: IProps) {
   }
 
   const isCancelled = booking.status === "cancelled";
+  const isConfirmed = booking.status === "confirmed";
+  const isPending = booking.status === "pending";
+  const isCancellable = booking.status === "pending" || booking.status === "payment_failed";
   const formattedEventDate = dateFormat.format(new Date(booking.event.event_date));
 
   return (
@@ -151,18 +168,39 @@ export function BookingCard({ booking }: IProps) {
               <CalendarDays className="h-3.5 w-3.5 shrink-0" />
               {dateFormat.format(new Date(isCancelled ? booking.updated_at : booking.created_at))}
             </span>
+            <Separator orientation="vertical" className="mx-1" />
+            <Badge variant="default" className={`${badgeColorMap[booking.status]} text-black capitalize`}>
+              {booking.status.split('_').join(' ')}
+            </Badge>
           </div>
           <div className="mt-4 md:mt-0 flex justify-between md:justify-start items-center gap-4">
             <span className="font-semibold">
               {usd.format(booking.total_price)}
             </span>
-            {!isMobile && <Separator orientation="vertical" />}
-            {isCancelled && (
-              <Badge variant="destructive">
-                Cancelled
-              </Badge>
+            {isPending && (
+              <Button
+                className="cursor-pointer"
+                variant="default"
+                size="sm"
+                onClick={handlePayment}
+                disabled={isCreatingPaymentSession}
+              >
+                {isCreatingPaymentSession ? "Loading..." : "Pay Now"}
+              </Button>
             )}
-            {!isCancelled && (
+            {!isMobile && <Separator orientation="vertical" />}
+            {isConfirmed && (
+              <Button
+                className="cursor-pointer"
+                variant="default"
+                size="sm"
+                onClick={() => {}}
+                disabled={false}
+              >
+                View Tickets
+              </Button>
+            )}
+            {isCancellable && (
               <Button
                 className="cursor-pointer"
                 variant="destructive"

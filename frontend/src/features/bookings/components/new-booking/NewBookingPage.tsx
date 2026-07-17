@@ -77,7 +77,7 @@ export function NewBookingPage() {
 
     createBooking(buildBookingRequest(event, selectedSeatIds, tierCounts), {
       onSuccess: () => {
-        toast.success("Booking confirmed!");
+        toast.success("Booking created!");
         reset();
         navigate({ to: "/bookings" });
       },
