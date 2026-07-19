@@ -103,7 +103,7 @@ class Config(BaseSettings):
     DB: DBConfig = DBConfig()
     AUTH0: Auth0Config = Auth0Config()
     STRIPE: StripeConfig = StripeConfig()
-    BOOKING_RESERVATION_TTL_HOURS: int
+    BOOKING_RESERVATION_TTL_HOURS: int  # 1+ hours (at least 30 min, required by Stripe checkout expires_at)
 
     model_config = SettingsConfigDict(
         env_file=load_environment_from_file(),

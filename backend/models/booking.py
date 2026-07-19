@@ -8,7 +8,6 @@ from enum import Enum
 class BookingStatus(str, Enum):
     PENDING = "pending"
     CONFIRMED = "confirmed"
-    PAYMENT_FAILED = "payment_failed"
     EXPIRED = "expired"
     CANCELLED = "cancelled"
 
@@ -23,8 +22,6 @@ class Booking(BaseEntity):
     currency: str = "usd"
     status: BookingStatus
     expires_at: datetime | None
-    stripe_checkout_session_id: str | None
-    stripe_payment_intent_id: str | None
 
     # Join fields
     event: Event | None = None

@@ -12,6 +12,7 @@ class PaymentsRepository(BaseRepository):
             id=Payment.build_entity_id_from_uuid(data['id']),
             booking_id=Booking.build_entity_id_from_uuid(data['id']),
             stripe_checkout_session_id=data['stripe_checkout_session_id'],
+            stripe_checkout_url=data['stripe_checkout_url'],
             stripe_payment_intent_id=data['stripe_payment_intent_id'],
             amount_cents=data['amount_cents'],
             currency=data['currency'],
@@ -24,13 +25,12 @@ class PaymentsRepository(BaseRepository):
         async with self.db_session.cursor() as cursor:
             await cursor.execute("""
                 INSERT INTO payments (
-                    id, booking_id, stripe_checkout_session_id, stripe_payment_intent_id, amount_cents, currency, status
+                    id, booking_id, stripe_checkout_session_id, stripe_checkout_url, stripe_payment_intent_id, amount_cents, currency, status
                 ) 
-                VALUES (%s, %s, %s, %s, %s, %s, %s)
+                VALUES (%s, %s, %s, %s, %s, %s, %s, %s)
                 RETURNING *
             """,
-            (payment.id.value, payment.booking_id.value, payment.stripe_checkout_session_id, payment.stripe_payment_intent_id, 
-            payment.amount_cents, payment.currency, payment.status))
+            (payment.id.value, payment.booking_id.value, payment.stripe_checkout_session_id, payment.stripe_checkout_url, payment.stripe_payment_intent_id, payment.amount_cents, payment.currency, payment.status))
             db_payment = await cursor.fetchone()
             if not db_payment:
                 return None
@@ -50,6 +50,17 @@ class PaymentsRepository(BaseRepository):
                 SELECT * FROM payments
                 WHERE stripe_checkout_session_id = %s
             """, (stripe_session_id,))
+            db_payment = await cursor.fetchone()
+            if not db_payment:
+                return None
+            return self._map_db_model_to_entity(db_payment)
+
+    async def get_by_booking_id(self, booking_id: EntityId) -> Payment | None:
+        async with self.db_session.cursor() as cursor:
+            await cursor.execute("""
+                SELECT * FROM payments
+                WHERE booking_id = %s
+            """, (booking_id.value,))
             db_payment = await cursor.fetchone()
             if not db_payment:
                 return None

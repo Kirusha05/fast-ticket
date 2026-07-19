@@ -28,8 +28,8 @@ def upgrade() -> None:
         sa.Column('email', sa.String(length=255), nullable=False, unique=True),
         sa.Column('auth0_id', sa.String(length=255), nullable=False, unique=True),
         sa.Column('role', user_role_enum, nullable=False),
-        sa.Column('created_at', sa.DateTime(), server_default=sa.func.now(), nullable=False),
-        sa.Column('updated_at', sa.DateTime(), server_default=sa.func.now(), nullable=False),
+        sa.Column('created_at', sa.DateTime(timezone=True), server_default=sa.func.now(), nullable=False),
+        sa.Column('updated_at', sa.DateTime(timezone=True), server_default=sa.func.now(), nullable=False),
     )
 
 

@@ -32,6 +32,10 @@ async def stripe_webhook(
     
     bookings_use_case = BookingsUseCase(db)
 
+    # Decide your policy: do expired-then-paid bookings get confirmed, or refunded?
+
+    # That's a good question. However since you're only using cards for payment options it may be better to set the payment expiration to be 31 or 32 minutes and have the user facing UI time out and prevent starting payment at the 30 minute mark.
+
     if event_type == "checkout.session.completed":
         stripe_session_id = data["id"]
         booking_id_raw = data["metadata"]["booking_id"]
@@ -44,13 +48,6 @@ async def stripe_webhook(
         booking_id_raw = data["metadata"]["booking_id"]
         booking_id = EntityId.from_string(booking_id_raw)
         await bookings_use_case.expire_booking(booking_id, stripe_session_id)
-    
-    elif event_type == "payment_intent.payment_failed":
-        print(data)
-        stripe_payment_intent_id = data["id"]
-        booking_id_raw = data["metadata"]["booking_id"]
-        booking_id = EntityId.from_string(booking_id_raw)
-        await bookings_use_case.mark_as_payment_failed(booking_id, stripe_payment_intent_id)
 
     # always return with status 200 (data doesn't matter) so Stripe doesn't keep retrying events we've already handled
     return { "success": True }

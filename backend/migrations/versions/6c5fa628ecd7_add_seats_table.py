@@ -26,8 +26,8 @@ def upgrade() -> None:
         sa.Column('seat_number', sa.String(length=10), nullable=False),
         sa.Column('price', sa.Numeric(10, 2), nullable=False),
         sa.Column('is_available', sa.Boolean(), default=True, nullable=False),
-        sa.Column('created_at', sa.DateTime(), server_default=sa.func.now(), nullable=False),
-        sa.Column('updated_at', sa.DateTime(), server_default=sa.func.now(), nullable=False),
+        sa.Column('created_at', sa.DateTime(timezone=True), server_default=sa.func.now(), nullable=False),
+        sa.Column('updated_at', sa.DateTime(timezone=True), server_default=sa.func.now(), nullable=False),
     )
 
 

@@ -27,13 +27,13 @@ def upgrade() -> None:
         sa.Column('name', sa.String(length=255), nullable=False),
         sa.Column('description', sa.Text(), nullable=False),
         sa.Column('venue', sa.String(length=255), nullable=False),
-        sa.Column('event_date', sa.DateTime(), nullable=False),
+        sa.Column('event_date', sa.DateTime(timezone=True), nullable=False),
         sa.Column('event_type', event_type_enum, nullable=False),
         sa.Column('banner_url', sa.Text(), nullable=False),
         sa.Column('total_tickets', sa.Integer(), nullable=True),
         sa.Column('available_tickets', sa.Integer(), nullable=True),
-        sa.Column('created_at', sa.DateTime(), server_default=sa.func.now(), nullable=False),
-        sa.Column('updated_at', sa.DateTime(), server_default=sa.func.now(), nullable=False),
+        sa.Column('created_at', sa.DateTime(timezone=True), server_default=sa.func.now(), nullable=False),
+        sa.Column('updated_at', sa.DateTime(timezone=True), server_default=sa.func.now(), nullable=False),
     )
 
 

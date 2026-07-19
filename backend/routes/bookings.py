@@ -35,7 +35,7 @@ async def create_booking(
     user: User = Depends(get_current_user),
 ) -> BookingResponse:
     bookings_use_case = BookingsUseCase(db)
-    return await bookings_use_case.create_booking(user.id, booking)
+    return await bookings_use_case.create_booking(user, booking)
 
 
 @router.post("/{booking_id}/payment", status_code=status.HTTP_201_CREATED)

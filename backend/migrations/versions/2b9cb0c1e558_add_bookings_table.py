@@ -19,7 +19,7 @@ depends_on: Union[str, Sequence[str], None] = None
 
 
 def upgrade() -> None:
-    booking_status_enum = sa.Enum('pending', 'confirmed', 'payment_failed', 'expired', 'cancelled', name='booking_status')
+    booking_status_enum = sa.Enum('pending', 'confirmed', 'expired', 'cancelled', name='booking_status')
 
     op.create_table(
         'bookings',
@@ -32,11 +32,9 @@ def upgrade() -> None:
         sa.Column('currency', sa.CHAR(3), default='usd', nullable=False),
         sa.Column('status', booking_status_enum, default='pending', nullable=False),
         sa.Column('expires_at', sa.DateTime(timezone=True), nullable=True),  # timestamp when the status will be set to 'expired'
-        sa.Column('stripe_checkout_session_id', sa.String(255), nullable=True),
-        sa.Column('stripe_payment_intent_id', sa.String(255), nullable=True),
 
-        sa.Column('created_at', sa.DateTime(), server_default=sa.func.now(), nullable=False),
-        sa.Column('updated_at', sa.DateTime(), server_default=sa.func.now(), nullable=False)
+        sa.Column('created_at', sa.DateTime(timezone=True), server_default=sa.func.now(), nullable=False),
+        sa.Column('updated_at', sa.DateTime(timezone=True), server_default=sa.func.now(), nullable=False)
     )
 
 

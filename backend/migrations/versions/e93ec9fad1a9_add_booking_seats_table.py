@@ -23,8 +23,8 @@ def upgrade() -> None:
         'booking_seated_tickets',
         sa.Column('booking_id', sa.UUID(as_uuid=True), sa.ForeignKey('bookings.id', ondelete='CASCADE'), nullable=False),
         sa.Column('seat_id', sa.UUID(as_uuid=True), sa.ForeignKey('event_seats.id', ondelete='CASCADE'), nullable=False),
-        sa.Column('created_at', sa.DateTime(), server_default=sa.func.now(), nullable=False),
-        sa.Column('updated_at', sa.DateTime(), server_default=sa.func.now(), nullable=False),
+        sa.Column('created_at', sa.DateTime(timezone=True), server_default=sa.func.now(), nullable=False),
+        sa.Column('updated_at', sa.DateTime(timezone=True), server_default=sa.func.now(), nullable=False),
         # Pure join table, so just use a composite primary key
         sa.PrimaryKeyConstraint('booking_id', 'seat_id'),
     )

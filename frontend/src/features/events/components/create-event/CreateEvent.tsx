@@ -22,7 +22,7 @@ const buildRequestPayload = (
     name: state.name.trim(),
     description: state.description.trim(),
     venue: state.venue.trim(),
-    event_date: state.eventDate,
+    event_date: new Date(state.eventDate).toISOString(),
     event_type: state.eventType,
     banner_url: state.bannerUrl.trim()
   };

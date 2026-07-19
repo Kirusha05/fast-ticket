@@ -17,6 +17,7 @@ from models import (
     Event,
     CreateBookingRequest,
     EventType,
+    EventTier,
     EventSeat,
     BookingResponse,
     PaymentSessionResponse,
@@ -41,7 +42,7 @@ class BookingsUseCase:
         self._booking_tiered_tickets_repository = BookingTieredTicketsRepository(db_session)
         self._payments_repository = PaymentsRepository(db_session)
 
-    async def create_booking(self, user_id: EntityId, booking_request: CreateBookingRequest) -> BookingResponse:
+    async def create_booking(self, user: User, booking_request: CreateBookingRequest) -> BookingResponse:
         event_id = EntityId.from_string(booking_request.event_id)
 
         event = await self._events_repository.get_by_id(event_id)
@@ -51,15 +52,22 @@ class BookingsUseCase:
         if event.event_type == EventType.SEATED:
             if not booking_request.seat_ids:
                 raise HTTPException(status_code=400, detail="Seated events require seat_ids")
-            return await self._create_seated_booking(user_id, event, booking_request)
+            created_booking = await self._create_seated_booking(user.id, event, booking_request)
 
         elif event.event_type == EventType.OPEN_FIELD:
             if not booking_request.tiered_tickets:
                 raise HTTPException(status_code=400, detail="Open field events require tiered_tickets")
-            return await self._create_open_field_booking(user_id, event, booking_request)
+            created_booking = await self._create_open_field_booking(user.id, event, booking_request)
 
         else:
             raise HTTPException(status_code=400, detail=f"Unknown event type: {event.event_type}")
+
+        await self.db_session.commit()
+
+        # decided to create the payment session directly after the booking, so a booking always has a corresponding payment
+        # the user just fetches the checkout_url later on
+        await self.create_payment_session(user, created_booking.id)
+        return created_booking
 
     async def _create_seated_booking(
         self, user_id: EntityId, event: Event, booking_request: CreateBookingRequest
@@ -87,6 +95,8 @@ class BookingsUseCase:
                 detail=f"One or more seats are already taken: {', '.join(unavailable_seat_numbers)}"
             )
 
+        # TODO: add max tickets per user per event to prevent scalping/resale
+
         total_price = sum(s.price for s in seats)
 
         booking = Booking(
@@ -97,9 +107,7 @@ class BookingsUseCase:
             total_price=total_price,
             currency="usd",
             status=BookingStatus.PENDING,
-            expires_at=datetime.now() + timedelta(hours=config.BOOKING_RESERVATION_TTL_HOURS),
-            stripe_checkout_session_id=None,
-            stripe_payment_intent_id=None
+            expires_at=datetime.now(timezone.utc) + timedelta(hours=config.BOOKING_RESERVATION_TTL_HOURS)
         )
 
         created_booking = await self._bookings_repository.create(booking)
@@ -183,9 +191,7 @@ class BookingsUseCase:
             total_price=total_price,
             currency="usd",
             status=BookingStatus.PENDING,
-            expires_at=datetime.now() + timedelta(hours=config.BOOKING_RESERVATION_TTL_HOURS),
-            stripe_checkout_session_id=None,
-            stripe_payment_intent_id=None
+            expires_at=datetime.now(timezone.utc) + timedelta(hours=config.BOOKING_RESERVATION_TTL_HOURS)
         )
 
         created_booking = await self._bookings_repository.create(booking)
@@ -266,13 +272,26 @@ class BookingsUseCase:
         if booking.user_id.value != current_user.id.value:
             raise HTTPException(status_code=403, detail="You are not allowed to access this booking")
         
-        if booking.status not in [BookingStatus.PENDING, BookingStatus.PAYMENT_FAILED]:
-             raise HTTPException(status_code=409, detail="You cannot pay for this booking")
+        if booking.status != BookingStatus.PENDING:
+             raise HTTPException(status_code=409, detail="Booking already confirmed/expired")
 
         if booking.expires_at and booking.expires_at < datetime.now(timezone.utc):
             booking.status = BookingStatus.EXPIRED
+            booking.expires_at = None
             await self._bookings_repository.update(booking_id, booking)
+            await self._release_booking_resources(booking, throw=False)  # make sure to not throw
+            payment = await self._payments_repository.get_by_booking_id(booking.id)
+            payment.status = PaymentStatus.EXPIRED
+            await self._payments_repository.update(payment.id, payment)
+
             raise HTTPException(status_code=409, detail="Booking expired")
+
+        existing_payment_session = await self._payments_repository.get_by_booking_id(booking_id)
+        if existing_payment_session:
+            return PaymentSessionResponse(
+                checkout_url=existing_payment_session.stripe_checkout_url,
+                session_id=existing_payment_session.stripe_checkout_session_id
+            )
 
         event = await self._events_repository.get_by_id(booking.event_id)
         if not event:
@@ -298,7 +317,8 @@ class BookingsUseCase:
                     ],
                     "success_url": config.STRIPE.SUCCESS_URL,
                     "cancel_url": config.STRIPE.CANCEL_URL,
-                    "expires_at": int(booking.expires_at.timestamp() - (2 * 60)),  # expire 2 min earlier
+                    # "expires_at": int(booking.expires_at.timestamp() - (2 * 60)),  # expire 2 min earlier
+                    "expires_at": int(booking.expires_at.timestamp()),
                     "client_reference_id": str(booking_id),
                     "customer_email": current_user.email,
                     "metadata": {"booking_id": str(booking_id)},  # accessible on session.* events
@@ -310,17 +330,14 @@ class BookingsUseCase:
         except stripe.StripeError as e:
             raise HTTPException(status_code=400, detail=str(e))
 
-        booking.stripe_checkout_session_id = session.id
-        # booking.status stays 'pending'
-        await self._bookings_repository.update(booking_id, booking)
-
         new_payment = Payment(
             id=Payment.generate_entity_id(),
             booking_id=booking_id,
             stripe_checkout_session_id=session.id,
+            stripe_checkout_url=session.url,
             stripe_payment_intent_id=None,
             amount_cents=amount_cents,
-            currency="usd",
+            currency=booking.currency,
             status=PaymentStatus.PENDING
         )
         await self._payments_repository.create(new_payment)
@@ -336,12 +353,11 @@ class BookingsUseCase:
         if not booking:
             return
         
-        # Return (status 200) if booking was already confirmed (network errors may result in the webhook being called twice)
-        if booking.status == BookingStatus.CONFIRMED:
+        # Allow only pending -> confirmed (network errors may result in the webhook being called twice)
+        if booking.status != BookingStatus.PENDING:
             return
 
         booking.status = BookingStatus.CONFIRMED
-        booking.stripe_payment_intent_id = stripe_payment_intent_id
         booking.expires_at = None
         await self._bookings_repository.update(booking_id, booking)
 
@@ -370,7 +386,7 @@ class BookingsUseCase:
 
             tier_counts = Counter(tt.tier_id.value for tt in tiered_tickets)
             for tier_uuid, count in tier_counts.items():
-                tier_id = EntityId.from_uuid(tier_uuid, prefix='et')
+                tier_id = EventTier.build_entity_id_from_uuid(tier_uuid)
                 await self._event_tiers_repository.increment_available_tickets(tier_id, count)
             await self._booking_tiered_tickets_repository.delete_by_booking_id(booking.id)
             await self._events_repository.increment_available_tickets(event.id, booking.ticket_count)
@@ -382,7 +398,7 @@ class BookingsUseCase:
             return
         
         # Return (status 200) if booking was already confirmed/expired/cancelled
-        if booking.status in [BookingStatus.EXPIRED, BookingStatus.CONFIRMED, BookingStatus.CANCELLED]:
+        if booking.status != BookingStatus.PENDING:
             return
 
         booking.status = BookingStatus.EXPIRED
@@ -395,28 +411,9 @@ class BookingsUseCase:
         payment.status = PaymentStatus.EXPIRED
         await self._payments_repository.update(payment.id, payment)
 
-    # will be called by the Stripe webhook, MUST return status 2xx
-    async def mark_as_payment_failed(self, booking_id: EntityId, stripe_payment_intent_id: str):
-        booking = await self._bookings_repository.get_by_id(booking_id)
-        if not booking:
-            return
-        
-        # this method will just update the payment status to FAILED and the booking status to PAYMENT_FAILED
-        if booking.status != BookingStatus.PENDING:
-            return
-        
-        booking.status = BookingStatus.PAYMENT_FAILED
-        await self._bookings_repository.update(booking_id, booking)
-
-        # stripe_session_id is not accessible from the PaymentIntent response, would need to query Stripe API to get it
-        # by using the stripe_payment_intent_id
-        payment = await self._payments_repository.get_by_stripe_session_id(stripe_session_id)
-        payment.status = PaymentStatus.FAILED
-        await self._payments_repository.update(payment.id, payment)
-
     # will be called by the user
     async def cancel_booking(self, user_id: EntityId, booking_id: EntityId) -> BookingResponse:
-        booking = await self._bookings_repository.get_by_id(booking_id)
+        booking = await self._bookings_repository.get_by_id_for_update(booking_id)
         if not booking:
             raise HTTPException(status_code=404, detail="Booking not found")
 
@@ -426,10 +423,22 @@ class BookingsUseCase:
         if booking.status == BookingStatus.CANCELLED:
             raise HTTPException(status_code=400, detail="Booking already cancelled")
         
-        if booking.status not in [BookingStatus.PENDING, BookingStatus.PAYMENT_FAILED]:
-            # For now, the user will be able to cancel only pending booking or the ones with failed payment
+        if booking.status != BookingStatus.PENDING:
+            # For now, the user will be able to cancel only pending booking
             # Confirmed bookings will not be cancellable (this already requires a refund, to be implemented later)
              raise HTTPException(status_code=409, detail="You cannot cancel this booking")
+
+        # If a Stripe checkout session exists, expire it manually
+        existing_payment_session = await self._payments_repository.get_by_booking_id(booking_id)
+        if existing_payment_session:
+            try:
+                await stripe_client.v1.checkout.sessions.expire_async(existing_payment_session.stripe_checkout_session_id)
+            except stripe.StripeError as e:
+                # do not cancel if we get a Stripe error, as the payment already succeeded or the session expired
+                raise HTTPException(status_code=400, detail="The booking is already confirmed/expired")
+            
+            existing_payment_session.status = PaymentStatus.EXPIRED
+            await self._payments_repository.update(existing_payment_session.id, existing_payment_session)
 
         await self._release_booking_resources(booking)
 

@@ -8,7 +8,6 @@ from pydantic import BaseModel
 class PaymentStatus(str, Enum):
     PENDING = "pending"
     SUCCEEDED = "succeeded"
-    FAILED = "failed"
     EXPIRED = "expired"
 
 
@@ -17,6 +16,7 @@ class Payment(BaseEntity):
 
     booking_id: EntityId
     stripe_checkout_session_id: str
+    stripe_checkout_url: str
     stripe_payment_intent_id: str | None
     amount_cents: int
     currency: str = "usd"

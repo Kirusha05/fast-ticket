@@ -18,8 +18,6 @@ class BookingsRepository(BaseRepository):
             currency=booking_row['currency'],
             status=booking_row['status'],
             expires_at=booking_row['expires_at'],
-            stripe_checkout_session_id=booking_row['stripe_checkout_session_id'],
-            stripe_payment_intent_id=booking_row['stripe_payment_intent_id'],
             event=None,
             seated_tickets=seated_tickets or [],
             tiered_tickets=tiered_tickets or [],
@@ -51,13 +49,12 @@ class BookingsRepository(BaseRepository):
     async def create(self, booking: Booking) -> Booking | None:
         async with self.db_session.cursor() as cursor:
             await cursor.execute("""
-                INSERT INTO bookings (id, user_id, event_id, ticket_count, total_price, currency, status, expires_at, stripe_checkout_session_id, stripe_payment_intent_id)
-                VALUES (%s, %s, %s, %s, %s, %s, %s, %s, %s, %s)
+                INSERT INTO bookings (id, user_id, event_id, ticket_count, total_price, currency, status, expires_at)
+                VALUES (%s, %s, %s, %s, %s, %s, %s, %s)
                 RETURNING *
             """,
                 (booking.id.value, booking.user_id.value, booking.event_id.value,
-                 booking.ticket_count, booking.total_price, booking.currency, booking.status, 
-                 booking.expires_at, booking.stripe_checkout_session_id, booking.stripe_payment_intent_id))
+                 booking.ticket_count, booking.total_price, booking.currency, booking.status, booking.expires_at))
             db_booking = await cursor.fetchone()
             if not db_booking:
                 return None
@@ -100,14 +97,11 @@ class BookingsRepository(BaseRepository):
                 SET 
                     status = %s,
                     expires_at = %s,
-                    stripe_checkout_session_id = %s,
-                    stripe_payment_intent_id = %s,
                     updated_at = NOW()
                 WHERE id = %s
                 RETURNING *
             """,
-                (booking.status, booking.expires_at, booking.stripe_checkout_session_id, 
-                booking.stripe_payment_intent_id, id.value))
+                (booking.status, booking.expires_at, id.value))
             db_booking = await cursor.fetchone()
             if not db_booking:
                 return None

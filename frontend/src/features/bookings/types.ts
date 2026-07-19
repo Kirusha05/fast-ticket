@@ -16,7 +16,7 @@ export interface BookingEventTier {
   tier_id: string;
 };
 
-export type BookingStatus = "pending" | "confirmed" | "payment_failed" | "expired" | "cancelled"
+export type BookingStatus = "pending" | "confirmed" | "expired" | "cancelled"
 
 export interface Booking {
   id: string;

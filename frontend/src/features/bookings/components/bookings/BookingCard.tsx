@@ -17,12 +17,17 @@ const usd = new Intl.NumberFormat("en-US", {
 });
 
 const dateFormat = new Intl.DateTimeFormat("en-US", {
-  month: "short",
-  day: "numeric",
-  year: "numeric",
-  hour: "numeric",
-  minute: "2-digit",
-})
+  dateStyle: "medium",
+  timeStyle: "short",
+});
+
+// new Intl.DateTimeFormat("en-US", {
+//   month: "short",
+//   day: "numeric",
+//   year: "numeric",
+//   hour: "numeric",
+//   minute: "2-digit",
+// })
 
 function ticketSummary(booking: Booking) {
   if (booking.seated_tickets.length > 0) {
@@ -54,8 +59,7 @@ const badgeColorMap: Record<BookingStatus, string> = {
   pending: "bg-yellow-500",
   confirmed: "bg-green-500",
   cancelled: "bg-red-500",
-  expired: "bg-muted-500",
-  payment_failed: "bg-red-500"
+  expired: "bg-slate-500"
 }
 
 interface IProps {
@@ -66,6 +70,8 @@ export function BookingCard({ booking }: IProps) {
   const { mutate: cancelBooking, isPending: isCancelling } = useCancelBooking();
   const { mutate: createPaymentSession, isPending: isCreatingPaymentSession } = useCreatePaymentSession(booking.id);
   const isMobile = useIsMobile();
+
+  console.log(booking)
 
   const handlePayment = () => {
     createPaymentSession();
@@ -85,14 +91,14 @@ export function BookingCard({ booking }: IProps) {
   const isCancelled = booking.status === "cancelled";
   const isConfirmed = booking.status === "confirmed";
   const isPending = booking.status === "pending";
-  const isCancellable = booking.status === "pending" || booking.status === "payment_failed";
+  const isExpired = booking.status === "expired";
   const formattedEventDate = dateFormat.format(new Date(booking.event.event_date));
 
   return (
     <Card
       className={cn(
         "flex-col md:flex-row gap-0 md:gap-2 overflow-hidden py-0 transition-shadow hover:shadow-md ",
-        isCancelled && "opacity-60",
+        (isCancelled || isExpired) && "opacity-60",
       )}
     >
       {/* event banner — clickable to event page */}
@@ -129,7 +135,7 @@ export function BookingCard({ booking }: IProps) {
           </div>
 
           {/* row 2: venue + date */}
-          <div className="flex flex-wrap items-center gap-x-4 gap-y-2 text-xs text-muted-foreground">
+          <div className="flex flex-wrap items-center gap-x-4 gap-y-2 text-xs text-muted-foreground mt-4 md:mt-0">
             <span className="inline-flex items-center gap-1">
               <MapPin className="h-3.5 w-3.5 shrink-0" />
               {booking.event.venue}
@@ -164,14 +170,22 @@ export function BookingCard({ booking }: IProps) {
             </span>
             <Separator orientation="vertical" className="mx-1" />
             <span className="inline-flex items-center gap-1 text-muted-foreground">
-              {isCancelled ? "canceled on" : "booked on"}
+              {isPending && "reservation expires on"}
+              {isConfirmed && "confirmed on"}
+              {isCancelled && "cancelled on"}
+              {isExpired && "expired on"}
               <CalendarDays className="h-3.5 w-3.5 shrink-0" />
-              {dateFormat.format(new Date(isCancelled ? booking.updated_at : booking.created_at))}
+              {isPending && dateFormat.format(new Date(booking.expires_at!))}
+              {(isConfirmed || isCancelled || isExpired) && dateFormat.format(new Date(booking.updated_at))}
             </span>
-            <Separator orientation="vertical" className="mx-1" />
-            <Badge variant="default" className={`${badgeColorMap[booking.status]} text-black capitalize`}>
-              {booking.status.split('_').join(' ')}
-            </Badge>
+            {!isMobile && (
+              <>
+                <Separator orientation="vertical" className="mx-1" />
+                <Badge variant="default" className={`${badgeColorMap[booking.status]} text-black capitalize`}>
+                  {booking.status.split('_').join(' ')}
+                </Badge>
+              </>
+            )}
           </div>
           <div className="mt-4 md:mt-0 flex justify-between md:justify-start items-center gap-4">
             <span className="font-semibold">
@@ -188,7 +202,7 @@ export function BookingCard({ booking }: IProps) {
                 {isCreatingPaymentSession ? "Loading..." : "Pay Now"}
               </Button>
             )}
-            {!isMobile && <Separator orientation="vertical" />}
+            {(isConfirmed || isPending) && !isMobile && <Separator orientation="vertical" />}
             {isConfirmed && (
               <Button
                 className="cursor-pointer"
@@ -200,7 +214,7 @@ export function BookingCard({ booking }: IProps) {
                 View Tickets
               </Button>
             )}
-            {isCancellable && (
+            {isPending && (
               <Button
                 className="cursor-pointer"
                 variant="destructive"

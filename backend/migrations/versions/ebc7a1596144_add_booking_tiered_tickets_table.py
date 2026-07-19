@@ -25,8 +25,8 @@ def upgrade() -> None:
         sa.Column('booking_id', sa.UUID(as_uuid=True), sa.ForeignKey('bookings.id', ondelete='CASCADE'), nullable=False),
         sa.Column('ticket_tier_id', sa.UUID(as_uuid=True), sa.ForeignKey('event_tiers.id', ondelete='CASCADE'), nullable=False),
         sa.Column('unit_price', sa.Numeric(10, 2), nullable=False),
-        sa.Column('created_at', sa.DateTime(), server_default=sa.func.now(), nullable=False),
-        sa.Column('updated_at', sa.DateTime(), server_default=sa.func.now(), nullable=False),
+        sa.Column('created_at', sa.DateTime(timezone=True), server_default=sa.func.now(), nullable=False),
+        sa.Column('updated_at', sa.DateTime(timezone=True), server_default=sa.func.now(), nullable=False),
     )
     op.create_index('ix_booking_tiered_tickets_booking_id', 'booking_tiered_tickets', ['booking_id'])
     op.create_index('ix_booking_tiered_tickets_ticket_tier_id', 'booking_tiered_tickets', ['ticket_tier_id'])
