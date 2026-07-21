@@ -47,3 +47,4 @@ app.include_router(webhooks_router, prefix="/webhooks")
 # uv run alembic upgrade head
 # uv run uvicorn main:app --host 0.0.0.0 --port 8000
 # uv run uvicorn main:app --host 0.0.0.0 --port 8000 --workers 4 --log-level error
+# stripe listen --forward-to localhost:8000/webhooks/stripe

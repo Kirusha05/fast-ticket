@@ -42,7 +42,7 @@ function RouterProviderWithContext() {
   }, [])
 
   // using fake loading during dev for better loading visual on fast localhost
-  if (isFakeLoading || (isAuthenticated && isLoadingAppUser)) {
+  if (isAuth0Loading || (isAuthenticated && isLoadingAppUser)) {
     return <LoadingScreen />
   }
 

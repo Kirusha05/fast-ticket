@@ -27,14 +27,11 @@ async def stripe_webhook(
         raise HTTPException(status_code=400, detail="Invalid signature")
 
     event_type = event.type
-    print(f"STRIPE EVENT TYPE: {event_type}")
     data = event.data.object
     
     bookings_use_case = BookingsUseCase(db)
 
-    # Decide your policy: do expired-then-paid bookings get confirmed, or refunded?
-
-    # That's a good question. However since you're only using cards for payment options it may be better to set the payment expiration to be 31 or 32 minutes and have the user facing UI time out and prevent starting payment at the 30 minute mark.
+    # Because Stripe's checkout session state is atomic (it will never attempt to confirm an already-expired session or vice versa), we don't have to worry about conflicting state transitions
 
     if event_type == "checkout.session.completed":
         stripe_session_id = data["id"]

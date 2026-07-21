@@ -1,6 +1,6 @@
 import { EventType } from "@/features/events/types";
 import type { Event, EventSeat, EventTier } from "@/features/events/types";
-import type { CreateBookingRequest } from "../../types";
+import type { Booking, CreateBookingRequest } from "../../types";
 
 /**
  * Sum the prices of the selected seats. Seats are indexed by id first so each
@@ -70,4 +70,36 @@ export function buildBookingRequest(
     .map(([tier_id, count]) => ({ tier_id, count }));
 
   return { event_id: event.id, tiered_tickets };
+}
+
+
+export const usd = new Intl.NumberFormat("en-US", {
+  style: "currency",
+  currency: "USD",
+});
+
+export function ticketSummary(booking: Booking) {
+  if (booking.seated_tickets.length > 0) {
+    return booking.seated_tickets
+      .map((s) => `${s.seat_number} (${usd.format(s.price)})`)
+      .join(", ");
+  }
+
+  if (booking.tiered_tickets.length > 0) {
+    const grouped = booking.tiered_tickets.reduce(
+      (acc, t) => {
+        const key = `${t.tier_name}::${t.unit_price}`;
+        if (!acc[key])
+          acc[key] = { name: t.tier_name, price: t.unit_price, count: 0 };
+        acc[key].count += 1;
+        return acc;
+      },
+      {} as Record<string, { name: string; price: number; count: number }>,
+    );
+    return Object.values(grouped)
+      .map((g) => `${g.name} × ${g.count} at ${usd.format(g.price)} each`)
+      .join(", ");
+  }
+
+  return null;
 }

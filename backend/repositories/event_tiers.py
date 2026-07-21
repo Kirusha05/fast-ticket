@@ -55,11 +55,21 @@ class EventTiersRepository(BaseRepository):
                 return None
             return self._map_db_model_to_entity(db_tier)
 
+    async def get_by_ids(self, tier_ids: list[EntityId]) -> list[EventTier]:
+        async with self.db_session.cursor() as cursor:
+            await cursor.execute("""
+                SELECT * FROM event_tiers
+                WHERE id = ANY(%s)
+            """, ([id.value for id in tier_ids],))
+            rows = await cursor.fetchall()
+            return [self._map_db_model_to_entity(row) for row in rows]
+
     async def get_by_ids_for_update(self, tier_ids: list[EntityId]) -> list[EventTier]:
         async with self.db_session.cursor() as cursor:
             await cursor.execute("""
                 SELECT * FROM event_tiers
                 WHERE id = ANY(%s)
+                ORDER BY id
                 FOR UPDATE
             """, ([id.value for id in tier_ids],))
             rows = await cursor.fetchall()

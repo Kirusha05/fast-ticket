@@ -62,6 +62,7 @@ class BookingsUseCase:
         else:
             raise HTTPException(status_code=400, detail=f"Unknown event type: {event.event_type}")
 
+        # release the seat locks before calling the Stripe API, so other booking requests can get rejected immediately
         await self.db_session.commit()
 
         # decided to create the payment session directly after the booking, so a booking always has a corresponding payment
@@ -152,8 +153,7 @@ class BookingsUseCase:
 
         for tier_id, count in tier_entries:
             tier = tier_map[tier_id.value]
-            if count <= 0:
-                raise HTTPException(status_code=400, detail="Ticket count must be at least 1")
+            # count <= 0 already handled by the Pydantic validator on CreateBookingRequest
 
             if count > tier.available_tickets:
                 raise HTTPException(
@@ -163,12 +163,15 @@ class BookingsUseCase:
                 )
 
             # decrement tier's available tickets
-            success = await self._event_tiers_repository.decrement_available_tickets(tier.id, count)
-            if not success:
-                raise HTTPException(
-                    status_code=409,
-                    detail="Not enough tickets available to fulfill your request. Try booking fewer tickets."
-                )
+            await self._event_tiers_repository.decrement_available_tickets(tier.id, count)
+
+            # this check will never fire, as we're already holding a lock on the tier, but may use in the future if logic changes
+            # success = await self._event_tiers_repository.decrement_available_tickets(tier.id, count)
+            # if not success:
+            #     raise HTTPException(
+            #         status_code=409,
+            #         detail="Not enough tickets available to fulfill your request. Try booking fewer tickets."
+            #     )
 
             unit_price = tier.price
             total_ticket_count += count
@@ -273,7 +276,7 @@ class BookingsUseCase:
             raise HTTPException(status_code=403, detail="You are not allowed to access this booking")
         
         if booking.status != BookingStatus.PENDING:
-             raise HTTPException(status_code=409, detail="Booking already confirmed/expired")
+             raise HTTPException(status_code=409, detail="Booking already confirmed/expired/cancelled")
 
         if booking.expires_at and booking.expires_at < datetime.now(timezone.utc):
             booking.status = BookingStatus.EXPIRED
@@ -283,6 +286,7 @@ class BookingsUseCase:
             payment = await self._payments_repository.get_by_booking_id(booking.id)
             payment.status = PaymentStatus.EXPIRED
             await self._payments_repository.update(payment.id, payment)
+            await self.db_session.commit()  # must commit before raising or the updates will get rolled back
 
             raise HTTPException(status_code=409, detail="Booking expired")
 
@@ -315,7 +319,7 @@ class BookingsUseCase:
                             "quantity": 1,
                         }
                     ],
-                    "success_url": config.STRIPE.SUCCESS_URL,
+                    "success_url": f"{config.STRIPE.SUCCESS_URL}?booking_id={str(booking_id)}",
                     "cancel_url": config.STRIPE.CANCEL_URL,
                     # "expires_at": int(booking.expires_at.timestamp() - (2 * 60)),  # expire 2 min earlier
                     "expires_at": int(booking.expires_at.timestamp()),
@@ -425,7 +429,7 @@ class BookingsUseCase:
         
         if booking.status != BookingStatus.PENDING:
             # For now, the user will be able to cancel only pending booking
-            # Confirmed bookings will not be cancellable (this already requires a refund, to be implemented later)
+            # Confirmed bookings will not be cancellable (this already requires a refund, may be implemented later)
              raise HTTPException(status_code=409, detail="You cannot cancel this booking")
 
         # If a Stripe checkout session exists, expire it manually

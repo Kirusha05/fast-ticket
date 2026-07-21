@@ -92,9 +92,11 @@ class EventSeatsRepository(BaseRepository):
 
     async def get_seats_by_ids_for_update(self, seat_ids: list[EntityId]) -> list[EventSeat]:
         async with self.db_session.cursor() as cursor:
+            # ORDER BY id, so Postgres acquires locks in a predictable order
             await cursor.execute("""
                 SELECT * FROM event_seats
                 WHERE id = ANY(%s)
+                ORDER BY id
                 FOR UPDATE
             """, ([id.value for id in seat_ids],))
             db_seats = await cursor.fetchall()

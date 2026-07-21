@@ -1,5 +1,5 @@
 import { z } from "zod";
-import { useNavigate, Link } from "@tanstack/react-router";
+import { getRouteApi, useNavigate, Link } from "@tanstack/react-router";
 import {
   CalendarDays,
   MapPin,
@@ -8,10 +8,10 @@ import {
   AlertCircle,
   Loader2,
   ShoppingCart,
+  AlertCircleIcon,
 } from "lucide-react";
 import { toast } from "sonner";
 
-import { Route } from "@/routes/bookings_.new";
 import { useGetEvent } from "@/features/events/hooks/useGetEvent";
 import { useCreateBooking } from "@/features/bookings/hooks/useCreateBooking";
 import { useNewBookingStore } from "@/features/bookings/stores/useNewBookingStore";
@@ -32,7 +32,13 @@ import {
   CardTitle,
   Skeleton,
   Separator,
+  Alert,
+  AlertTitle,
+  AlertDescription
 } from "@/components/ui";
+import { useAuth0 } from "@auth0/auth0-react";
+
+const routeApi = getRouteApi("/bookings_/new");
 
 export const newBookingSchema = z.object({
   event_id: z.string(),
@@ -48,11 +54,12 @@ const formatDateTime = (dateStr: string): string => {
     hour: "numeric",
     minute: "2-digit",
   }).format(date);
-}
+};
 
 export function NewBookingPage() {
-  const { event_id } = Route.useSearch();
+  const { event_id } = routeApi.useSearch();
   const navigate = useNavigate();
+  const { isAuthenticated } = useAuth0();
   const { data: event, isPending, isError, error } = useGetEvent(event_id);
   const { mutate: createBooking, isPending: isBooking } = useCreateBooking();
 
@@ -67,7 +74,9 @@ export function NewBookingPage() {
       ? sumSeatsPrice(event.seats, selectedSeatIds)
       : sumTiersPrice(event.tiers, tierCounts)
     : 0;
-  const totalTickets = event ? countTickets(event, selectedSeatIds, tierCounts) : 0;
+  const totalTickets = event
+    ? countTickets(event, selectedSeatIds, tierCounts)
+    : 0;
 
   // At least one ticket must be selected to submit.
   const canSubmit = totalTickets > 0;
@@ -159,13 +168,17 @@ export function NewBookingPage() {
             {/* Venue */}
             <div className="flex items-center gap-2">
               <MapPin className="h-4 w-4 text-muted-foreground shrink-0" />
-              <span className="text-sm text-muted-foreground">{event.venue}</span>
+              <span className="text-sm text-muted-foreground">
+                {event.venue}
+              </span>
             </div>
 
             {/* Date */}
             <div className="flex items-center gap-2">
               <CalendarDays className="h-4 w-4 text-muted-foreground shrink-0" />
-              <span className="text-sm text-muted-foreground">{formattedDate}</span>
+              <span className="text-sm text-muted-foreground">
+                {formattedDate}
+              </span>
             </div>
 
             {/* Available count */}
@@ -173,7 +186,8 @@ export function NewBookingPage() {
               <Ticket className="h-4 w-4 text-muted-foreground shrink-0" />
               <span className="text-sm text-muted-foreground">
                 {event.available_tickets}{" "}
-                {event.event_type === EventType.SEATED ? "seats" : "tickets"} left
+                {event.event_type === EventType.SEATED ? "seats" : "tickets"}{" "}
+                left
               </span>
             </div>
           </div>
@@ -195,6 +209,16 @@ export function NewBookingPage() {
         )}
       </section>
 
+      {!isAuthenticated && (
+        <Alert variant="destructive" className="max-w">
+          <AlertCircleIcon />
+          <AlertTitle>Authentication required</AlertTitle>
+          <AlertDescription>
+            You must authenticate before booking any tickets.
+          </AlertDescription>
+        </Alert>
+      )}
+
       {/* ---------- Booking summary ---------- */}
       <Card>
         <CardContent>
@@ -203,14 +227,12 @@ export function NewBookingPage() {
               <p className="text-sm text-muted-foreground">
                 {totalTickets} {totalTickets === 1 ? "ticket" : "tickets"}
               </p>
-              <p className="text-2xl font-bold">
-                ${totalPrice.toFixed(2)}
-              </p>
+              <p className="text-2xl font-bold">${totalPrice.toFixed(2)}</p>
             </div>
 
             <Button
               size="lg"
-              disabled={!canSubmit || isBooking}
+              disabled={!canSubmit || isBooking || !isAuthenticated}
               onClick={handleBookTickets}
             >
               {isBooking ? (
@@ -230,4 +252,4 @@ export function NewBookingPage() {
       </Card>
     </div>
   );
-};
+}

@@ -30,7 +30,7 @@ export function EventsPage() {
       <div className="flex items-center justify-between">
         <h1 className="text-2xl font-bold">Events</h1>
         {isAdmin && <Button className="cursor-pointer" onClick={() => navigate({ to: "/events/create" })}>
-          <Plus className="mr-1 h-4 w-4" />
+          <Plus className="h-4 w-4" />
           New
         </Button>}
       </div>

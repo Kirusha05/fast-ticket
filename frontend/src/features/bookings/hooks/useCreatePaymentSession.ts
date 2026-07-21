@@ -8,8 +8,10 @@ export const useCreatePaymentSession = (bookingId: string) => {
 
   return useMutation({
     mutationFn: () => createPaymentSession(auth, bookingId),
-    onSuccess: (data) => {
+    onError: () => {
         queryClient.invalidateQueries({ queryKey: ["bookings"] });
+    },
+    onSuccess: (data) => {
         window.location.href = data.checkout_url;
     },
   });

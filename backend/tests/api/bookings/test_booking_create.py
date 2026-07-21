@@ -1,9 +1,14 @@
 from fastapi.testclient import TestClient
 from psycopg import AsyncConnection
 import json
+from unittest.mock import patch, AsyncMock, MagicMock
+import pytest
 
-
-async def test_booking_create_open_field(test_client: TestClient, db_session: AsyncConnection, override_current_user_dummy):
+@pytest.mark.asyncio
+@patch("usecases.bookings.stripe_client")
+async def test_booking_create_open_field(
+    mock_stripe_client, test_client: TestClient, db_session: AsyncConnection, override_current_user_dummy
+):
     """
     Setup:
       Users:
@@ -28,6 +33,14 @@ async def test_booking_create_open_field(test_client: TestClient, db_session: As
     with open('tests/data/tiers.sql') as f:
         await db_session.execute(f.read())
         await db_session.commit()
+
+    fake_session = MagicMock()
+    fake_session.id = "cs_test_123"
+    fake_session.url = "https://checkout.stripe.com/c/pay/cs_test_123"
+
+    mock_stripe_client.v1.checkout.sessions.create_async = AsyncMock(
+        return_value=fake_session
+    )
 
     override_current_user_dummy()  # bypass authorization
     event_id = "e-11111111-1111-1111-1111-111111111111"
@@ -75,7 +88,11 @@ async def test_booking_create_open_field(test_client: TestClient, db_session: As
     assert row['available_tickets'] == 9998
 
 
-async def test_booking_create_seated(test_client: TestClient, db_session: AsyncConnection, override_current_user_dummy):
+@pytest.mark.asyncio
+@patch("usecases.bookings.stripe_client")
+async def test_booking_create_seated(
+    mock_stripe_client, test_client: TestClient, db_session: AsyncConnection, override_current_user_dummy
+):
     """
     Setup:
       Users:
@@ -102,6 +119,14 @@ async def test_booking_create_seated(test_client: TestClient, db_session: AsyncC
     with open('tests/data/seats.sql') as f:
         await db_session.execute(f.read())
         await db_session.commit()
+
+    fake_session = MagicMock()
+    fake_session.id = "cs_test_123"
+    fake_session.url = "https://checkout.stripe.com/c/pay/cs_test_123"
+
+    mock_stripe_client.v1.checkout.sessions.create_async = AsyncMock(
+        return_value=fake_session
+    )
 
     override_current_user_dummy()  # bypass authorization
     event_id = "e-22222222-2222-2222-2222-222222222222"
@@ -366,4 +391,234 @@ async def test_booking_create_open_field_zero_tickets(
     assert "Ticket count must be at least 1" in str(data["detail"])
 
 
-# TODO: test booking tickets for an event with zero left tickets
+@pytest.mark.asyncio
+@patch("usecases.bookings.stripe_client")
+async def test_booking_create_request_includes_both_tiered_and_seated(
+    mock_stripe_client, test_client: TestClient, db_session: AsyncConnection, override_current_user_dummy
+):
+    """
+    Setup:
+      Users:
+        - User 1 (u-11111111-...), "Test User"
+
+      Events:
+        - Summerfest (e-11111111-...), open_field, 10000 total/available
+        - Opera Night (e-22222222-...), seated, 1000 total/available
+        - Rock Arena (e-33333333-...), seated, 500 total/available
+
+      Tiers (for Summerfest):
+        - General (et-77777777-...), $50, 10000 total/available
+
+    Logged in as User 1.
+    Book 2x General tickets on Summerfest -> booking created with 2 tiered_tickets at $50 ea = $100.
+    Event and tier available_tickets decremented from 10000 -> 9998.
+    """
+    with open('tests/data/user.sql') as f:
+        await db_session.execute(f.read())
+    with open('tests/data/event.sql') as f:
+        await db_session.execute(f.read())
+    with open('tests/data/tiers.sql') as f:
+        await db_session.execute(f.read())
+        await db_session.commit()
+
+    fake_session = MagicMock()
+    fake_session.id = "cs_test_123"
+    fake_session.url = "https://checkout.stripe.com/c/pay/cs_test_123"
+
+    mock_stripe_client.v1.checkout.sessions.create_async = AsyncMock(
+        return_value=fake_session
+    )
+
+    override_current_user_dummy()  # bypass authorization
+    event_id = "e-11111111-1111-1111-1111-111111111111"
+    tier_id = "et-77777777-7777-7777-7777-777777777777"
+
+    request = {
+    "event_id": event_id,
+        "tiered_tickets": [
+            {"tier_id": tier_id, "count": 2}
+        ],
+        "seat_ids": [
+            "es-aaaaaaaa-aaaa-aaaa-aaaa-aaaaaaaaaaaa",
+            "es-bbbbbbbb-bbbb-bbbb-bbbb-bbbbbbbbbbbb"
+        ]
+    }
+
+    response = test_client.post("/bookings", json=request)
+    data = response.json()
+    print(json.dumps(data, indent=2))
+
+    assert response.status_code == 422
+    assert "Must provide only one of seat_ids or tiered_tickets" in str(data["detail"])
+
+
+@pytest.mark.asyncio
+@patch("usecases.bookings.stripe_client")
+async def test_booking_create_open_field_no_tickets_left(
+    mock_stripe_client, test_client: TestClient, db_session: AsyncConnection, override_current_user_dummy
+):
+    """
+    Setup:
+      Users:
+        - User 1 (u-11111111-...), "Test User"
+
+      Events:
+        - Summerfest (e-11111111-...), open_field, 10000 total/available
+        - Opera Night (e-22222222-...), seated, 1000 total/available
+        - Rock Arena (e-33333333-...), seated, 500 total/available
+
+      Tiers (for Summerfest):
+        - General (et-77777777-...), $50, 10000 total/available
+
+    Logged in as User 1.
+    Book 2x General tickets on Summerfest -> booking created with 2 tiered_tickets at $50 ea = $100.
+    Event and tier available_tickets decremented from 10000 -> 9998.
+    """
+    with open('tests/data/user.sql') as f:
+        await db_session.execute(f.read())
+    with open('tests/data/event.sql') as f:
+        await db_session.execute(f.read())
+    with open('tests/data/tiers.sql') as f:
+        await db_session.execute(f.read())
+        await db_session.commit()
+
+    fake_session = MagicMock()
+    fake_session.id = "cs_test_123"
+    fake_session.url = "https://checkout.stripe.com/c/pay/cs_test_123"
+
+    mock_stripe_client.v1.checkout.sessions.create_async = AsyncMock(
+        return_value=fake_session
+    )
+
+    override_current_user_dummy()  # bypass authorization
+    event_id = "e-44444444-4444-4444-4444-444444444444"
+    tier_id = "et-88888888-8888-8888-8888-888888888888"
+
+    request = {
+        "event_id": event_id,
+        "tiered_tickets": [
+            {"tier_id": tier_id, "count": 2}
+        ]
+    }
+
+    response = test_client.post("/bookings", json=request)
+    data = response.json()
+    print(json.dumps(data, indent=2))
+
+    assert response.status_code == 409
+    assert data["detail"] == "Not enough tickets available for tier General. Requested: 2, Available: 0"
+
+
+
+@pytest.mark.asyncio
+@patch("usecases.bookings.stripe_client")
+async def test_booking_create_open_field_non_existing_tier(
+    mock_stripe_client, test_client: TestClient, db_session: AsyncConnection, override_current_user_dummy
+):
+    """
+    Setup:
+      Users:
+        - User 1 (u-11111111-...), "Test User"
+
+      Events:
+        - Summerfest (e-11111111-...), open_field, 10000 total/available
+        - Opera Night (e-22222222-...), seated, 1000 total/available
+        - Rock Arena (e-33333333-...), seated, 500 total/available
+
+      Tiers (for Summerfest):
+        - General (et-77777777-...), $50, 10000 total/available
+
+    Logged in as User 1.
+    Book 2x General tickets on Summerfest -> booking created with 2 tiered_tickets at $50 ea = $100.
+    Event and tier available_tickets decremented from 10000 -> 9998.
+    """
+    with open('tests/data/user.sql') as f:
+        await db_session.execute(f.read())
+    with open('tests/data/event.sql') as f:
+        await db_session.execute(f.read())
+    with open('tests/data/tiers.sql') as f:
+        await db_session.execute(f.read())
+        await db_session.commit()
+
+    fake_session = MagicMock()
+    fake_session.id = "cs_test_123"
+    fake_session.url = "https://checkout.stripe.com/c/pay/cs_test_123"
+
+    mock_stripe_client.v1.checkout.sessions.create_async = AsyncMock(
+        return_value=fake_session
+    )
+
+    override_current_user_dummy()  # bypass authorization
+    event_id = "e-11111111-1111-1111-1111-111111111111"
+    tier_id = "et-77777777-7777-7777-7777-888888888888"
+
+    request = {
+        "event_id": event_id,
+        "tiered_tickets": [
+            {"tier_id": tier_id, "count": 2}
+        ]
+    }
+
+    response = test_client.post("/bookings", json=request)
+    data = response.json()
+    print(json.dumps(data, indent=2))
+
+    assert response.status_code == 404
+    assert data["detail"] == f"Tiers not found: {tier_id}"
+
+
+@pytest.mark.asyncio
+@patch("usecases.bookings.stripe_client")
+async def test_booking_create_open_field_tier_not_belonging_to_event(
+    mock_stripe_client, test_client: TestClient, db_session: AsyncConnection, override_current_user_dummy
+):
+    """
+    Setup:
+      Users:
+        - User 1 (u-11111111-...), "Test User"
+
+      Events:
+        - Summerfest (e-11111111-...), open_field, 10000 total/available
+        - Opera Night (e-22222222-...), seated, 1000 total/available
+        - Rock Arena (e-33333333-...), seated, 500 total/available
+
+      Tiers (for Summerfest):
+        - General (et-77777777-...), $50, 10000 total/available
+
+    Logged in as User 1.
+    Book 2x General tickets on Summerfest -> booking created with 2 tiered_tickets at $50 ea = $100.
+    Event and tier available_tickets decremented from 10000 -> 9998.
+    """
+    with open('tests/data/user.sql') as f:
+        await db_session.execute(f.read())
+    with open('tests/data/event.sql') as f:
+        await db_session.execute(f.read())
+    with open('tests/data/tiers.sql') as f:
+        await db_session.execute(f.read())
+        await db_session.commit()
+
+    fake_session = MagicMock()
+    fake_session.id = "cs_test_123"
+    fake_session.url = "https://checkout.stripe.com/c/pay/cs_test_123"
+
+    mock_stripe_client.v1.checkout.sessions.create_async = AsyncMock(
+        return_value=fake_session
+    )
+
+    override_current_user_dummy()  # bypass authorization
+    event_id = "e-11111111-1111-1111-1111-111111111111"
+    tier_id = "et-88888888-8888-8888-8888-888888888888"
+
+    request = {
+        "event_id": event_id,
+        "tiered_tickets": [
+            {"tier_id": tier_id, "count": 2}
+        ]
+    }
+
+    response = test_client.post("/bookings", json=request)
+    data = response.json()
+    print(json.dumps(data, indent=2))
+
+    assert response.status_code == 400
+    assert data["detail"] == f"Tier {tier_id} does not belong to event {event_id}"

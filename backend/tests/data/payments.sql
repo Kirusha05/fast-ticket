@@ -1,0 +1,21 @@
+INSERT INTO payments (
+    id,
+    booking_id,
+    stripe_checkout_session_id,
+    stripe_checkout_url,
+    stripe_payment_intent_id,
+    amount_cents,
+    currency,
+    status
+)
+VALUES
+(
+    '11111111-1111-1111-1111-111111111111',
+    '10000000-0000-0000-0000-000000000002',
+    'cs_test_123',
+    'https://...',
+    NULL,
+    30000,
+    'usd',
+    'pending'
+);

@@ -41,4 +41,15 @@ VALUES (
     'https://t4.ftcdn.net/jpg/06/00/62/77/360_F_600627754_uKAUfEHyXUdPHlZWldI47Z5TqZpGKhB7.jpg',
     500,
     500
+),
+(
+    '44444444-4444-4444-4444-444444444444',
+    'Classics never die',
+    'Classical music',
+    'Concert Hall',
+    '2026-08-20',
+    'open_field',
+    'https://t4.ftcdn.net/jpg/06/00/62/77/360_F_600627754_uKAUfEHyXUdPHlZWldI47Z5TqZpGKhB7.jpg',
+    100,
+    0
 );

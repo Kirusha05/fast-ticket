@@ -8,9 +8,7 @@ INSERT INTO bookings (
     ticket_count,
     total_price,
     currency,
-    expires_at,
-    stripe_checkout_session_id,
-    stripe_payment_intent_id
+    expires_at
 )
 VALUES
     -- user 1, open field event, 2 General tickets @ $50 each = $100
@@ -22,9 +20,7 @@ VALUES
         2,
         100.00,
         'usd',
-        NOW() + INTERVAL '30 minutes',   -- expires 30 min from insert time,
-        NULL,
-        NULL
+        NOW() + INTERVAL '30 minutes'   -- expires 30 min from insert time,
     ),
     -- user 1, seated event, seats A1 + A2 @ $150 each = $300
     (
@@ -35,9 +31,7 @@ VALUES
         2,
         300.00,
         'usd',
-        NOW() + INTERVAL '30 minutes',   -- expires 30 min from insert time,
-        NULL,
-        NULL
+        NOW() + INTERVAL '30 minutes'   -- expires 30 min from insert time,
     ),
     -- user 2, open field event, 1 General ticket @ $50 = $50
     (
@@ -48,9 +42,7 @@ VALUES
         1,
         50.00,
         'usd',
-        NOW() + INTERVAL '30 minutes',   -- expires 30 min from insert time,
-        NULL,
-        NULL
+        NOW() + INTERVAL '30 minutes'   -- expires 30 min from insert time,
     );
 
 -- Booking #1: 2 General tiered tickets
