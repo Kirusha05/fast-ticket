@@ -6,3 +6,4 @@ from .booking_seated_tickets import *
 from .event_tiers import *
 from .booking_tiered_tickets import *
 from .payments import *
+from .sales import *

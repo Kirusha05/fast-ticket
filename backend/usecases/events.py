@@ -1,7 +1,7 @@
 from fastapi import HTTPException
 from psycopg import AsyncConnection
 from repositories import EventsRepository, EventSeatsRepository, EventTiersRepository
-from models import EntityId, Event, EventSeat, EventTier, CreateEventRequest, UpdateEventRequest, EventType
+from models import EntityId, User, UserRole, Event, EventSeat, EventTier, CreateEventRequest, UpdateEventRequest, EventType
 
 
 class EventsUseCase:
@@ -11,7 +11,10 @@ class EventsUseCase:
         self._event_seats_repository = EventSeatsRepository(db_session)
         self._event_tiers_repository = EventTiersRepository(db_session)
 
-    async def create(self, event_request: CreateEventRequest) -> Event:
+    async def create(self, user: User, event_request: CreateEventRequest) -> Event:
+        if user.role != UserRole.ADMIN:
+            raise HTTPException(status_code=403, detail="You are not allowed to perform this action")
+
         if event_request.event_type == EventType.SEATED:
             total_tickets = len(event_request.seats)
         elif event_request.event_type == EventType.OPEN_FIELD:
