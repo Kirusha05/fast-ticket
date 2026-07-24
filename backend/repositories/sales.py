@@ -77,7 +77,7 @@ class SalesRepository():
                     END AS sell_through_rate
                 FROM events e
                 LEFT JOIN bookings b ON e.id = b.event_id
-                WHERE e.created_at >= %s AND e.created_at < %s
+                WHERE e.event_date >= %s AND e.event_date < %s
                 GROUP BY e.id, e.name, e.event_date, e.total_tickets
                 ORDER BY confirmed_revenue DESC
                 LIMIT %s

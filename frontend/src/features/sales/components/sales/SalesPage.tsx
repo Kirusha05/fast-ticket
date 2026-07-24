@@ -1,4 +1,5 @@
 import { OverallAnalyticsSection } from "../overall-analytics-section/OverallAnalyticsSection";
+import { TopEventsSection } from "../top-events-section/TopEventsSection";
 
 export function SalesPage() {
   return (
@@ -9,6 +10,7 @@ export function SalesPage() {
       </div>
 
       <OverallAnalyticsSection />
+      <TopEventsSection />
     </div>
   );
 }

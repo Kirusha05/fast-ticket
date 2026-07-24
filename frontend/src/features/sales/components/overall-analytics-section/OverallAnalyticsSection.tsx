@@ -1,14 +1,14 @@
 import { useState } from "react";
-import { subDays } from "date-fns";
+import { subMonths } from "date-fns";
 import type { SalesGranularity } from "../../types";
 import { OverallToolbar } from "./OverallToolbar";
 import { OverallKpiCards } from "./KpiCards";
 import { SalesOverTimeChart } from "./SalesOverTimeChart";
 
 export const OverallAnalyticsSection = () => {
-  // Default to last 30 days
+  // Default to last month
   const [dateRange, setDateRange] = useState<{ start: Date; end: Date }>({
-    start: subDays(new Date(), 30),
+    start: subMonths(new Date(), 1),
     end: new Date(),
   });
   const [granularity, setGranularity] = useState<SalesGranularity>("day");
