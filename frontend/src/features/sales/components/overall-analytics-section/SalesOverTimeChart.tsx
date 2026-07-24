@@ -43,52 +43,64 @@ export const SalesOverTimeChart = ({ dateRange, granularity }: IProps) => {
   })) ?? [];
 
 // Mock data
-//   const isLoading = false;
-//   granularity = "day";
-//   const formattedData: {
-//     date: string;
-//     timestamp: string;
-//     revenue: number;
-//     tickets_sold: number;
-//   }[] = [
-//     {
-//       timestamp: "2026-07-12T00:00:00Z",
-//       revenue: 400,
-//       tickets_sold: 14,
-//       date: "Jul 12",
-//     },
-//     {
-//       timestamp: "2026-07-17T00:00:00Z",
-//       revenue: 650,
-//       tickets_sold: 18,
-//       date: "Jul 17",
-//     },
-//     {
-//       timestamp: "2026-07-21T00:00:00Z",
-//       revenue: 250,
-//       tickets_sold: 10,
-//       date: "Jul 21",
-//     },
-//     {
-//       timestamp: "2026-07-23T00:00:00Z",
-//       revenue: 300,
-//       tickets_sold: 10,
-//       date: "Jul 23",
-//     },
-//     {
-//       timestamp: "2026-07-25T00:00:00Z",
-//       revenue: 890,
-//       tickets_sold: 24,
-//       date: "Jul 25",
-//     },
-//   ];
+  // const isLoading = false;
+  // granularity = "day";
+  // const formattedData: {
+  //   date: string;
+  //   timestamp: string;
+  //   revenue: number;
+  //   tickets_sold: number;
+  // }[] = [
+  //   {
+  //     timestamp: "2026-07-10T00:00:00Z",
+  //     revenue: 520,
+  //     tickets_sold: 10,
+  //     date: "Jul 10",
+  //   },
+  //   {
+  //     timestamp: "2026-07-12T00:00:00Z",
+  //     revenue: 400,
+  //     tickets_sold: 14,
+  //     date: "Jul 12",
+  //   },
+  //   {
+  //     timestamp: "2026-07-17T00:00:00Z",
+  //     revenue: 650,
+  //     tickets_sold: 18,
+  //     date: "Jul 17",
+  //   },
+  //   {
+  //     timestamp: "2026-07-21T00:00:00Z",
+  //     revenue: 250,
+  //     tickets_sold: 10,
+  //     date: "Jul 21",
+  //   },
+  //   {
+  //     timestamp: "2026-07-23T00:00:00Z",
+  //     revenue: 300,
+  //     tickets_sold: 10,
+  //     date: "Jul 23",
+  //   },
+  //   {
+  //     timestamp: "2026-07-25T00:00:00Z",
+  //     revenue: 890,
+  //     tickets_sold: 24,
+  //     date: "Jul 25",
+  //   },
+  //   {
+  //     timestamp: "2026-07-27T00:00:00Z",
+  //     revenue: 700,
+  //     tickets_sold: 20,
+  //     date: "Jul 27",
+  //   },
+  // ];
 
   return (
     <div className="rounded-xl bg-black p-4">
       {isLoading ? (
-        <Skeleton className="h-[500px] w-full bg-neutral-900" />
+        <Skeleton className="h-[550px] w-full bg-neutral-900" />
       ) : (
-        <ChartContainer config={chartConfig} className="h-[500px] w-full">
+        <ChartContainer config={chartConfig} className="h-[550px] w-full">
           <AreaChart
             accessibilityLayer
             data={formattedData}

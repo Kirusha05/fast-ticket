@@ -15,7 +15,7 @@ export const getEventTiersSales = async (
     end_date: end_date.toISOString()
   });
 
-  return apiFetch<TierSalesSummary>(`/sales/events/${event_id}/tiers?${searchParams.toString()}`, {
+  return apiFetch<TierSalesSummary[]>(`/sales/events/${event_id}/tiers?${searchParams.toString()}`, {
     authToken,
   });
 };

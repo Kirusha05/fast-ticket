@@ -65,7 +65,7 @@ class SalesUseCase:
 
         summary = await self._sales_repository.get_sales_summary_by_event_id(start_date, end_date, event_id)
         if not summary:
-            raise HTTPException(status_code=404, detail="No sales data found for this event")
+            raise HTTPException(status_code=404, detail="No sales data found for this event or date range")
         return summary
 
     async def get_event_tiers_sales_summaries(

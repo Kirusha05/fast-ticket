@@ -3,7 +3,7 @@ import { useQuery } from "@tanstack/react-query";
 import { getEventTiersSales } from "../api/get-event-tiers-sales";
 
 export const useGetEventTiersSales = (event_id: string, start_date: Date, end_date: Date) => {
-    const auth = useAuth0();
+  const auth = useAuth0();
 
   return useQuery({
     queryKey: ["sales_tiers", event_id, start_date, end_date],

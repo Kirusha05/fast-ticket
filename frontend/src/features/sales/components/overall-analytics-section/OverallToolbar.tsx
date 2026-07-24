@@ -21,7 +21,7 @@ export const OverallToolbar = ({
   return (
     <div className="flex flex-col gap-5 border-b pb-6 md:flex-row md:items-end md:justify-between">
       <div className="space-y-1">
-        <h2 className="text-2xl font-semibold tracking-tight">
+        <h2 className="text-2xl font-bold tracking-tight">
           Overall Analytics
         </h2>
         <p className="text-sm text-muted-foreground">

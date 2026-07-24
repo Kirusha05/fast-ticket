@@ -3,7 +3,7 @@ import { useQuery } from "@tanstack/react-query";
 import { getEventSalesSummary } from "../api/get-event-sales-summary";
 
 export const useGetEventSalesSummary = (event_id: string, start_date: Date, end_date: Date) => {
-    const auth = useAuth0();
+  const auth = useAuth0();
 
   return useQuery({
     queryKey: ["sales", event_id, start_date, end_date],

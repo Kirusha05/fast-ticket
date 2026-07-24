@@ -13,7 +13,7 @@ export const TopEventsSection = () => {
   const [topK, setTopK] = useState(5);
 
   return (
-    <section className="space-y-6 border-t pt-6">
+    <section className="space-y-6 border-t pt-10">
       <TopEventsHeader dateRange={dateRange} setDateRange={setDateRange} setTopK={setTopK} />
       <TopEventsLeaderboard dateRange={dateRange} topK={topK} />
     </section>

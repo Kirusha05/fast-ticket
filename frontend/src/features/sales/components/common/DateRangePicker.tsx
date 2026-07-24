@@ -116,7 +116,7 @@ export const DateRangePicker = ({ dateRange, setDateRange }: IProps) => {
         <Button
           variant="outline"
           className={cn(
-            "w-[280px] justify-start bg-background text-left font-normal",
+            "justify-start bg-background text-left font-normal",
           )}
         >
           <CalendarIcon className="mr-1 h-4 w-4 opacity-70" />

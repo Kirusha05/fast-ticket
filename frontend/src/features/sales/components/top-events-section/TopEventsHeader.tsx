@@ -35,7 +35,7 @@ export const TopEventsHeader = ({
         </p>
       </div>
 
-      <div className="flex flex-col gap-3 sm:flex-row sm:items-end">
+      <div className="flex flex-col gap-2 sm:flex-row sm:items-end">
         <div className="flex flex-col gap-1.5">
           <Label htmlFor="top-k" className="text-xs text-muted-foreground">
             Num. of events
