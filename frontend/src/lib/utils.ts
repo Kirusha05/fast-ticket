@@ -20,7 +20,6 @@ export async function apiFetch<T>(
 
   if (!response.ok) {
     const body = await response.json().catch(() => null);
-    console.log("EEEERRR:")
     console.log(body)
     const message =
       body?.detail ?? body?.message ?? `Request failed with status ${response.status}`;

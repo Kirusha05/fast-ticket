@@ -1,15 +1,13 @@
-from backend.models.base import EntityId
-from repositories.base import BaseRepository
 from psycopg import AsyncConnection
 from datetime import datetime
 from typing import Literal
 from models.sales import SalesSummary, TimeSeriesPoint, EventSalesSummary, TierSalesSummary
-from models import Event, EventTier
+from models import Event, EventTier, EntityId
 
 
-class SalesRepository(BaseRepository):
+class SalesRepository():
     def __init__(self, db_session: AsyncConnection):
-        super().__init__(db_session)
+        self.db_session = db_session
 
     async def get_sales_summary(self, start_date: datetime, end_date: datetime) -> SalesSummary | None:
         async with self.db_session.cursor() as cursor:

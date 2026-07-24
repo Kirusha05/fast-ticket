@@ -128,9 +128,6 @@ export function SuccessPage() {
 
               {/* Order Summary */}
               <div className="space-y-2">
-                <h4 className="text-sm font-medium text-muted-foreground uppercase tracking-wider">
-                  Order Details
-                </h4>
                 <div className="flex items-center justify-between text-sm">
                   <span className="text-muted-foreground">Booking ID</span>
                   <span className="font-mono font-medium">{booking.id}</span>
