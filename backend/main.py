@@ -3,7 +3,7 @@ from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
 from config.db_session import init_db_pool, close_db_pool
 
-from routes import users_router, events_router, bookings_router, webhooks_router, sales_router
+from routes import users_router, events_router, bookings_router, webhooks_router, sales_router, tickets_router
 
 
 @asynccontextmanager
@@ -42,6 +42,7 @@ app.include_router(events_router, prefix="/events")
 app.include_router(bookings_router, prefix="/bookings")
 app.include_router(webhooks_router, prefix="/webhooks")
 app.include_router(sales_router, prefix="/sales")
+app.include_router(tickets_router, prefix="/tickets")
 
 
 # Start with

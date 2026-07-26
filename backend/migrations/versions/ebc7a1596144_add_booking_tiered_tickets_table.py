@@ -22,8 +22,8 @@ def upgrade() -> None:
     op.create_table(
         'booking_tiered_tickets',
         sa.Column('id', sa.UUID(as_uuid=True), primary_key=True, nullable=False),
-        sa.Column('booking_id', sa.UUID(as_uuid=True), sa.ForeignKey('bookings.id', ondelete='CASCADE'), nullable=False),
-        sa.Column('ticket_tier_id', sa.UUID(as_uuid=True), sa.ForeignKey('event_tiers.id', ondelete='CASCADE'), nullable=False),
+        sa.Column('booking_id', sa.UUID(as_uuid=True), sa.ForeignKey('bookings.id', ondelete='RESTRICT'), nullable=False),
+        sa.Column('ticket_tier_id', sa.UUID(as_uuid=True), sa.ForeignKey('event_tiers.id', ondelete='RESTRICT'), nullable=False),
         sa.Column('unit_price', sa.Numeric(10, 2), nullable=False),
         sa.Column('created_at', sa.DateTime(timezone=True), server_default=sa.func.now(), nullable=False),
         sa.Column('updated_at', sa.DateTime(timezone=True), server_default=sa.func.now(), nullable=False),

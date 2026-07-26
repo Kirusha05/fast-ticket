@@ -32,7 +32,7 @@ class EventSeatsRepository(BaseRepository):
                 return None
             return self._map_db_model_to_entity(db_seat)
 
-    async def create_multiple(self, seats: list[EventSeat]) -> list[EventSeat]:
+    async def create_many(self, seats: list[EventSeat]) -> list[EventSeat]:
         if not seats:
             return []
         values = [
@@ -56,10 +56,7 @@ class EventSeatsRepository(BaseRepository):
             return self._map_db_model_to_entity(db_seat)
 
     async def get_all(self) -> list[EventSeat]:
-        async with self.db_session.cursor() as cursor:
-            await cursor.execute("SELECT * FROM event_seats")
-            db_seats = await cursor.fetchall()
-            return [self._map_db_model_to_entity(db_seat) for db_seat in db_seats]
+        pass
 
     async def update(self, id: EntityId, seat: EventSeat) -> EventSeat | None:
         async with self.db_session.cursor() as cursor:

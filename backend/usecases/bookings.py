@@ -8,7 +8,8 @@ from repositories import (
     BookingSeatedTicketsRepository,
     EventTiersRepository,
     BookingTieredTicketsRepository,
-    PaymentsRepository
+    PaymentsRepository,
+    TicketsRepository
 )
 from models import (
     Booking,
@@ -23,7 +24,9 @@ from models import (
     PaymentSessionResponse,
     User,
     Payment,
-    PaymentStatus
+    PaymentStatus,
+    Ticket,
+    TicketStatus
 )
 from datetime import datetime, timedelta, timezone
 import stripe
@@ -41,6 +44,7 @@ class BookingsUseCase:
         self._event_tiers_repository = EventTiersRepository(db_session)
         self._booking_tiered_tickets_repository = BookingTieredTicketsRepository(db_session)
         self._payments_repository = PaymentsRepository(db_session)
+        self._tickets_repository = TicketsRepository(db_session)
 
     async def create_booking(self, user: User, booking_request: CreateBookingRequest) -> BookingResponse:
         event_id = EntityId.from_string(booking_request.event_id)
@@ -116,7 +120,7 @@ class BookingsUseCase:
             raise HTTPException(status_code=500, detail="Failed to create booking")
 
         await self._event_seats_repository.mark_seats_as_unavailable(seat_ids)
-        await self._booking_seated_tickets_repository.create_multiple(created_booking.id, seat_ids)
+        await self._booking_seated_tickets_repository.create_many(created_booking.id, seat_ids)
         await self._events_repository.decrement_available_tickets(event.id, booking.ticket_count)
 
         enriched = await self._enrich_bookings([created_booking])
@@ -201,7 +205,7 @@ class BookingsUseCase:
         if not created_booking:
             raise HTTPException(status_code=500, detail="Failed to create booking")
 
-        await self._booking_tiered_tickets_repository.create_multiple(created_booking.id, ticket_rows)
+        await self._booking_tiered_tickets_repository.create_many(created_booking.id, ticket_rows)
 
         enriched = await self._enrich_bookings([created_booking])
         return enriched[0]
@@ -361,14 +365,50 @@ class BookingsUseCase:
         if booking.status != BookingStatus.PENDING:
             return
 
+        # update booking status
         booking.status = BookingStatus.CONFIRMED
         booking.expires_at = None
         await self._bookings_repository.update(booking_id, booking)
 
+        # update payment status and set the payment_intent_id
         payment = await self._payments_repository.get_by_stripe_session_id(stripe_session_id)
         payment.status = PaymentStatus.SUCCEEDED
         payment.stripe_payment_intent_id = stripe_payment_intent_id
         await self._payments_repository.update(payment.id, payment)
+
+        # create the tickets
+        await self._create_tickets(booking)
+
+    async def _create_tickets(self, booking: Booking):
+        enriched = await self._enrich_bookings([booking])
+        enriched_booking = enriched[0]
+        
+        if enriched_booking.seated_tickets:
+            tickets = [
+                Ticket(
+                    id=Ticket.generate_entity_id(),
+                    booking_id=booking.id,
+                    event_id=booking.event_id,
+                    seat_id=seat.id,
+                    tier_id=None,
+                    status=TicketStatus.UNUSED,
+                    checked_in_at=None
+                ) for seat in enriched_booking.seated_tickets
+            ]
+        elif enriched_booking.tiered_tickets:
+            tickets = [
+                Ticket(
+                    id=Ticket.generate_entity_id(),
+                    booking_id=booking.id,
+                    event_id=booking.event_id,
+                    seat_id=None,
+                    tier_id=tier.tier_id,
+                    status=TicketStatus.UNUSED,
+                    checked_in_at=None
+                ) for tier in enriched_booking.tiered_tickets
+            ]
+
+        await self._tickets_repository.create_many(tickets)
 
     async def _release_booking_resources(self, booking: Booking, throw = True):
         event = await self._events_repository.get_by_id(booking.event_id)

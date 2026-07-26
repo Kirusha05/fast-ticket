@@ -32,7 +32,7 @@ class EventTiersRepository(BaseRepository):
                 return None
             return self._map_db_model_to_entity(db_tier)
 
-    async def create_multiple(self, tiers: list[EventTier]) -> list[EventTier]:
+    async def create_many(self, tiers: list[EventTier]) -> list[EventTier]:
         if not tiers:
             return []
         values = [
@@ -107,10 +107,7 @@ class EventTiersRepository(BaseRepository):
             return result is not None
 
     async def get_all(self) -> list[EventTier]:
-        async with self.db_session.cursor() as cursor:
-            await cursor.execute("SELECT * FROM event_tiers")
-            rows = await cursor.fetchall()
-            return [self._map_db_model_to_entity(row) for row in rows]
+        pass
 
     async def update(self, tier_id: EntityId, tier: EventTier) -> EventTier | None:
         async with self.db_session.cursor() as cursor:

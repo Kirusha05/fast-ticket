@@ -31,7 +31,7 @@ class BookingTieredTicketsRepository(BaseRepository):
                 return None
             return self._map_db_model_to_entity(row)
 
-    async def create_multiple(self, booking_id: EntityId, tiered_tickets: list[dict[str, Any]]) -> bool:
+    async def create_many(self, booking_id: EntityId, tiered_tickets: list[dict[str, Any]]) -> bool:
         """
         Insert multiple tiered ticket rows for a booking.
 
@@ -48,6 +48,7 @@ class BookingTieredTicketsRepository(BaseRepository):
         ]
         if not values:
             return False
+        
         async with self.db_session.cursor() as cursor:
             await cursor.executemany("""
                 INSERT INTO booking_tiered_tickets (id, booking_id, ticket_tier_id, unit_price)

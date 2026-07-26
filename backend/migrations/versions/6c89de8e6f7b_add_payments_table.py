@@ -32,7 +32,7 @@ def upgrade() -> None:
     op.create_table(
         'payments',
         sa.Column('id', sa.UUID(as_uuid=True), primary_key=True, nullable=False),
-        sa.Column('booking_id', sa.UUID(as_uuid=True), sa.ForeignKey('bookings.id', ondelete='CASCADE'), nullable=False),
+        sa.Column('booking_id', sa.UUID(as_uuid=True), sa.ForeignKey('bookings.id', ondelete='RESTRICT'), nullable=False),
         sa.Column('stripe_checkout_session_id', sa.String(255), nullable=False, unique=True),
         sa.Column('stripe_checkout_url', sa.Text(), nullable=False),
         sa.Column('stripe_payment_intent_id', sa.String(255), nullable=True),

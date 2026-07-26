@@ -17,18 +17,20 @@ class BookingSeatedTicketsRepository(BaseRepository):
             """, (booking_id.value, seat_id.value))
             return cursor.rowcount > 0
 
-    async def create_multiple(self, booking_id: EntityId, seat_ids: list[EntityId]) -> bool:
+    async def create_many(self, booking_id: EntityId, seat_ids: list[EntityId]) -> bool:
         values = [
             (booking_id.value, seat_id.value)
             for seat_id in seat_ids
         ]
+        if not values:
+            return False
 
         async with self.db_session.cursor() as cursor:
             await cursor.executemany("""
                 INSERT INTO booking_seated_tickets (booking_id, seat_id)
                 VALUES (%s, %s)
             """, values)
-            return len(seat_ids) > 0
+            return True
 
     async def delete_by_booking_id(self, booking_id: EntityId) -> bool:
         async with self.db_session.cursor() as cursor:

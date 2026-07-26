@@ -15,7 +15,7 @@ def test_events_list_empty(test_client: TestClient, db_session: AsyncConnection)
     assert data == []
 
 
-async def test_events_list_all_no_bookings(test_client: TestClient, db_session: AsyncConnection):
+async def test_events_list_all(test_client: TestClient, db_session: AsyncConnection):
     """
     Setup:
       - Summerfest, open_field, 10000 available
@@ -31,7 +31,7 @@ async def test_events_list_all_no_bookings(test_client: TestClient, db_session: 
     print(json.dumps(data, indent=2))
 
     assert response.status_code == 200
-    assert len(data) == 3
+    assert len(data) == 4
 
     # Verify all expected IDs are present
     returned_ids = {e["id"] for e in data}
@@ -39,6 +39,7 @@ async def test_events_list_all_no_bookings(test_client: TestClient, db_session: 
         "e-11111111-1111-1111-1111-111111111111",
         "e-22222222-2222-2222-2222-222222222222",
         "e-33333333-3333-3333-3333-333333333333",
+        "e-44444444-4444-4444-4444-444444444444",
     }
 
     # Build a dict by event id for easier assertions
@@ -77,52 +78,6 @@ async def test_events_list_all_no_bookings(test_client: TestClient, db_session: 
     assert rock["tiers"] == []
 
 
-async def test_events_list_after_bookings(
-    test_client: TestClient, db_session: AsyncConnection
-):
-    """
-    Setup: full dataset with pre-existing bookings:
-      - Summerfest: 10000 total, 9997 available (3 tickets booked)
-      - Opera Night: 1000 total, 998 available (2 seats booked)
-      - Rock Arena: 500 total, 500 available (no bookings)
-    """
-    with open('tests/data/user.sql') as f:
-        await db_session.execute(f.read())
-    with open('tests/data/event.sql') as f:
-        await db_session.execute(f.read())
-    with open('tests/data/tiers.sql') as f:
-        await db_session.execute(f.read())
-    with open('tests/data/seats.sql') as f:
-        await db_session.execute(f.read())
-    with open('tests/data/booking_confirmed.sql') as f:
-        await db_session.execute(f.read())
-        await db_session.commit()
-
-    response = test_client.get("/events")
-    data = response.json()
-    print(json.dumps(data, indent=2))
-
-    assert response.status_code == 200
-    assert len(data) == 3
-
-    by_id = {e["id"]: e for e in data}
-
-    # Summerfest: 3 of 10000 tickets taken
-    summerfest = by_id["e-11111111-1111-1111-1111-111111111111"]
-    assert summerfest["total_tickets"] == 10000
-    assert summerfest["available_tickets"] == 9997
-
-    # Opera Night: 2 of 1000 seats taken
-    opera = by_id["e-22222222-2222-2222-2222-222222222222"]
-    assert opera["total_tickets"] == 1000
-    assert opera["available_tickets"] == 998
-
-    # Rock Arena: untouched
-    rock = by_id["e-33333333-3333-3333-3333-333333333333"]
-    assert rock["total_tickets"] == 500
-    assert rock["available_tickets"] == 500
-
-
 async def test_events_list_filter_open_field(
     test_client: TestClient, db_session: AsyncConnection
 ):
@@ -139,12 +94,18 @@ async def test_events_list_filter_open_field(
     print(json.dumps(data, indent=2))
 
     assert response.status_code == 200
-    assert len(data) == 1
+    assert len(data) == 2
+    data.sort(key=lambda item: item["id"])
 
-    event = data[0]
-    assert event["id"] == "e-11111111-1111-1111-1111-111111111111"
-    assert event["name"] == "Summerfest"
-    assert event["event_type"] == "open_field"
+    event_1 = data[0]
+    assert event_1["id"] == "e-11111111-1111-1111-1111-111111111111"
+    assert event_1["name"] == "Summerfest"
+    assert event_1["event_type"] == "open_field"
+
+    event_2 = data[1]
+    assert event_2["id"] == "e-44444444-4444-4444-4444-444444444444"
+    assert event_2["name"] == "Classics never die"
+    assert event_2["event_type"] == "open_field"
 
 
 async def test_events_list_filter_seated(

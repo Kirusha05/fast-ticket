@@ -46,7 +46,7 @@ class EventsUseCase:
                 )
                 for seat_input in event_request.seats
             ]
-            await self._event_seats_repository.create_multiple(seats)
+            await self._event_seats_repository.create_many(seats)
 
         if event_request.tiers:
             tiers = [
@@ -60,7 +60,7 @@ class EventsUseCase:
                 )
                 for tier_input in event_request.tiers
             ]
-            await self._event_tiers_repository.create_multiple(tiers)
+            await self._event_tiers_repository.create_many(tiers)
 
         return created_event
 

@@ -3,13 +3,13 @@ from psycopg import AsyncConnection
 import json
 
 
-def test_event_create_with_tickets(test_client: TestClient, db_session: AsyncConnection, override_current_user_dummy):
+def test_event_create_with_tickets(test_client: TestClient, db_session: AsyncConnection, override_current_user_admin):
     """
     Setup: empty database.
     POST a new open_field event Summerfest with 1 tier (General, $50, 10000 tickets).
     Event created with total_tickets=10000, available_tickets=10000.
     """
-    override_current_user_dummy()  # bypass authorization
+    override_current_user_admin()  # bypass authorization
 
     request = {
         "name": "Summerfest",
@@ -41,14 +41,14 @@ def test_event_create_with_tickets(test_client: TestClient, db_session: AsyncCon
     assert data["updated_at"] is not None
 
 
-async def test_event_create_with_seats(test_client: TestClient, db_session: AsyncConnection, override_current_user_dummy):
+async def test_event_create_with_seats(test_client: TestClient, db_session: AsyncConnection, override_current_user_admin):
     """
     Setup: empty database.
     POST a new seated event Opera Night with 3 seats (A1=$150, A2=$150, B1=$120).
     Event created with total_tickets=3. All 3 seats persisted in event_seats.
     """
 
-    override_current_user_dummy()  # bypass authorization
+    override_current_user_admin()  # bypass authorization
 
     request = {
         "name": "Opera Night",

@@ -51,6 +51,7 @@ async def db_session(db_pool: AsyncConnectionPool) -> AsyncConnection:
 
         # delete all data from the tables for cleanup
         models = [
+            "tickets",
             "payments",
             "booking_tiered_tickets",
             "booking_seated_tickets",
@@ -87,6 +88,22 @@ def override_current_user_dummy(test_client: TestClient):
         email="test@test.com",
         auth0_id="ababababababab",
         role=UserRole.USER
+    )
+
+    def _override():
+        app.dependency_overrides[get_current_user] = lambda: user
+    yield _override
+    app.dependency_overrides.clear()
+
+
+@pytest.fixture
+def override_current_user_admin(test_client: TestClient):
+    user = User(
+        id=EntityId.from_string("u-11111111-1111-1111-1111-111111111111"),
+        name="Admin User",
+        email="test@test.com",
+        auth0_id="ababababababab",
+        role=UserRole.ADMIN
     )
 
     def _override():

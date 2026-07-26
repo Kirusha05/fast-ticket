@@ -24,8 +24,8 @@ def upgrade() -> None:
     op.create_table(
         'bookings',
         sa.Column('id', sa.UUID(as_uuid=True), primary_key=True, nullable=False),
-        sa.Column('user_id', sa.UUID(as_uuid=True), sa.ForeignKey('users.id', ondelete='CASCADE'), nullable=False),
-        sa.Column('event_id', sa.UUID(as_uuid=True), sa.ForeignKey('events.id', ondelete='CASCADE'), nullable=False),
+        sa.Column('user_id', sa.UUID(as_uuid=True), sa.ForeignKey('users.id', ondelete='RESTRICT'), nullable=False),
+        sa.Column('event_id', sa.UUID(as_uuid=True), sa.ForeignKey('events.id', ondelete='RESTRICT'), nullable=False),
         sa.Column('ticket_count', sa.Integer(), nullable=False),
 
         sa.Column('total_price', sa.Numeric(10, 2), nullable=False),
@@ -36,6 +36,8 @@ def upgrade() -> None:
         sa.Column('created_at', sa.DateTime(timezone=True), server_default=sa.func.now(), nullable=False),
         sa.Column('updated_at', sa.DateTime(timezone=True), server_default=sa.func.now(), nullable=False)
     )
+    op.create_index('ix_bookings_user_id', 'bookings', ['user_id'])
+    op.create_index('ix_bookings_event_id', 'bookings', ['event_id'])
 
 
 def downgrade() -> None:
