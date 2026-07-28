@@ -4,6 +4,7 @@ import { EventDetailToolbar } from "./EventDetailToolbar";
 import { EventSummaryCards } from "./EventSummaryCards";
 import { EventType, type Event } from "@/features/events/types";
 import { EventTiersBreakdown } from "./EventTiersBreakdown";
+import { Layers } from "lucide-react";
 
 export const EventDetailSection: React.FC = () => {
   // Default to last month
@@ -33,6 +34,20 @@ export const EventDetailSection: React.FC = () => {
           selectedEvent={selectedEvent}
           dateRange={dateRange}
         />
+      )}
+
+      {!selectedEvent && (
+        <div className="flex flex-col items-center justify-center py-12 text-center">
+          <div className="mb-4 rounded-full bg-muted p-3">
+            <Layers className="h-8 w-8 text-muted-foreground" />
+          </div>
+
+          <p className="font-medium">No events selected</p>
+
+          <p className="mt-1 text-sm text-muted-foreground">
+            Select an event to view its sales performance.
+          </p>
+        </div>
       )}
     </section>
   );

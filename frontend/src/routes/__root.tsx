@@ -6,6 +6,7 @@ import { SidebarProvider, SidebarInset } from "@/components/ui/sidebar";
 import { TooltipProvider } from "@/components/ui/tooltip";
 import { Toaster } from "@/components/ui/sonner";
 import { useIsMobile } from "@/hooks/use-mobile";
+import { Footer } from "@/features/footer/components";
 
 export interface RouterContext {
   auth: {
@@ -33,6 +34,7 @@ function RootLayout() {
           <main className="mt-12 flex-1 p-6">
             <Outlet />
           </main>
+          <Footer />
         </SidebarInset>
 
         {/* <TanStackRouterDevtools /> */}
