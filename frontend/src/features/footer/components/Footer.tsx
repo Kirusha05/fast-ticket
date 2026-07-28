@@ -58,14 +58,7 @@ export function Footer() {
             </div>
           ))}
         </div>
-
-        {/* Ticket-stub perforation divider */}
-        {/* <div className="relative my-10 flex items-center">
-          <div className="h-3 w-3 rounded-full bg-zinc-950 border border-zinc-800 -ml-1" />
-          <div className="flex-1 border-t border-dashed border-zinc-800" />
-          <div className="h-3 w-3 rounded-full bg-zinc-950 border border-zinc-800 -mr-1" />
-        </div> */}
-
+        
         {/* Bottom bar */}
         <div className="flex flex-col sm:flex-row items-center justify-between gap-3 text-xs text-zinc-600">
           <p>© {new Date().getFullYear()} FastTicket, Inc. All rights reserved.</p>

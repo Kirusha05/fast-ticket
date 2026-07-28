@@ -20,9 +20,14 @@ export async function apiFetch<T>(
 
   if (!response.ok) {
     const body = await response.json().catch(() => null);
-    console.log(body)
-    const message =
+    // console.log(body)
+    let message =
       body?.detail ?? body?.message ?? `Request failed with status ${response.status}`;
+
+    // Pydantic validation error
+    if (response.status == 422 && Array.isArray(message)) {
+      message = message[0].msg;
+    }
     throw new Error(message);
   }
 

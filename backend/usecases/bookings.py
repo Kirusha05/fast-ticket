@@ -53,6 +53,9 @@ class BookingsUseCase:
         if not event:
             raise HTTPException(status_code=404, detail="Event not found")
 
+        if datetime.now(timezone.utc) > event.event_date:
+            raise HTTPException(status_code=409, detail="Cannot make a reservation after the event has started")
+
         if event.event_type == EventType.SEATED:
             if not booking_request.seat_ids:
                 raise HTTPException(status_code=400, detail="Seated events require seat_ids")

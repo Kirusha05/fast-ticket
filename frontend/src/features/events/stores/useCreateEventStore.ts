@@ -28,6 +28,15 @@ function nextColor(): string {
   return c;
 }
 
+function getLocalDateTimeString() {
+  const now = new Date();
+
+  const offset = now.getTimezoneOffset();
+  const local = new Date(now.getTime() - offset * 60 * 1000);
+
+  return local.toISOString().slice(0, 16);
+}
+
 type CreateEventState = {
   // common
   name: string;
@@ -83,7 +92,7 @@ const initialState = {
   name: "",
   description: "",
   venue: "",
-  eventDate: "",
+  eventDate: getLocalDateTimeString(),
   eventType: EventType.SEATED,
   bannerUrl: "",
   rows: 10,
