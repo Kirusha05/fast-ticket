@@ -12,16 +12,27 @@ import {
   SidebarMenu,
   SidebarMenuButton,
   SidebarMenuItem,
+  useSidebar,
 } from "@/components/ui/sidebar";
 import { UserMenu } from "./UserMenu";
 import { NAV_ITEMS } from "./nav-items";
 import { useIsAdmin } from "@/features/common/auth/hooks/useIsAdmin";
+import { useEffect } from "react";
 
 export function AppSidebar() {
   const { isLoading, isAuthenticated, user, loginWithRedirect } =
     useAuth0();
   const location = useLocation();
   const isAdmin = useIsAdmin();
+  const { setOpenMobile, isMobile } = useSidebar()
+
+  // automatically close the mobile menu whenever the path changes
+  useEffect(() => {
+    if (isMobile) {
+      setOpenMobile(false)
+    }
+  }, [location.pathname, isMobile, setOpenMobile])
+  
 
   return (
     <SidebarPrimitive collapsible="icon" variant="sidebar">

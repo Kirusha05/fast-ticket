@@ -29,8 +29,8 @@ const badgeColorMap: Record<BookingStatus, string> = {
   pending: "bg-yellow-500",
   confirmed: "bg-green-500",
   cancelled: "bg-red-500",
-  expired: "bg-slate-500"
-}
+  expired: "bg-slate-500",
+};
 
 interface IProps {
   booking: Booking;
@@ -38,12 +38,13 @@ interface IProps {
 
 export function BookingCard({ booking }: IProps) {
   const { mutate: cancelBooking, isPending: isCancelling } = useCancelBooking();
-  const { mutate: createPaymentSession, isPending: isCreatingPaymentSession } = useCreatePaymentSession(booking.id);
+  const { mutate: createPaymentSession, isPending: isCreatingPaymentSession } =
+    useCreatePaymentSession(booking.id);
   const isMobile = useIsMobile();
 
   const handlePayment = () => {
     createPaymentSession();
-  }
+  };
 
   const handleCancelBooking = () => {
     cancelBooking(booking.id, {
@@ -54,13 +55,15 @@ export function BookingCard({ booking }: IProps) {
         toast.error(err.message ?? "Failed to cancel booking.");
       },
     });
-  }
+  };
 
   const isCancelled = booking.status === "cancelled";
   const isConfirmed = booking.status === "confirmed";
   const isPending = booking.status === "pending";
   const isExpired = booking.status === "expired";
-  const formattedEventDate = dateFormat.format(new Date(booking.event.event_date));
+  const formattedEventDate = dateFormat.format(
+    new Date(booking.event.event_date),
+  );
 
   return (
     <Card
@@ -94,7 +97,7 @@ export function BookingCard({ booking }: IProps) {
                 <Link
                   to="/events/$eventId"
                   params={{ eventId: booking.event_id }}
-                  >
+                >
                   <ExternalLink className="h-3.5 w-3.5" />
                   View event
                 </Link>
@@ -128,32 +131,31 @@ export function BookingCard({ booking }: IProps) {
           )}
         </div>
 
-
         {/* row 4: count + total */}
         <div className="flex flex-col md:flex-row md:items-center gap-2 justify-between text-sm">
           <div className="flex items-center gap-1.5 shrink-0">
-            <span className="text-muted-foreground">
-              {booking.ticket_count}{" "}
-              {booking.ticket_count === 1 ? "ticket" : "tickets"}
-            </span>
-            <Separator orientation="vertical" className="mx-1" />
-            <span className="inline-flex items-center gap-1 text-muted-foreground">
-              {isPending && "reservation expires on"}
-              {isConfirmed && "confirmed on"}
-              {isCancelled && "cancelled on"}
-              {isExpired && "expired on"}
-              <CalendarDays className="h-3.5 w-3.5 shrink-0" />
-              {isPending && dateFormat.format(new Date(booking.expires_at!))}
-              {(isConfirmed || isCancelled || isExpired) && dateFormat.format(new Date(booking.updated_at))}
-            </span>
             {!isMobile && (
               <>
+                <span className="text-muted-foreground">
+                  {booking.ticket_count}{" "}
+                  {booking.ticket_count === 1 ? "ticket" : "tickets"}
+                </span>
                 <Separator orientation="vertical" className="mx-1" />
-                <Badge variant="default" className={`${badgeColorMap[booking.status]} text-black capitalize`}>
-                  {booking.status.split('_').join(' ')}
-                </Badge>
               </>
             )}
+            <span className="inline-flex items-center gap-1 text-muted-foreground">
+              <Badge
+                variant="default"
+                className={`${badgeColorMap[booking.status]} text-black capitalize mr-1`}
+              >
+                {isPending ? "expires" : booking.status.split("_").join(" ")}
+              </Badge>
+              on
+              <CalendarDays className="h-3.5 w-3.5 shrink-0" />
+              {isPending && dateFormat.format(new Date(booking.expires_at!))}
+              {(isConfirmed || isCancelled || isExpired) &&
+                dateFormat.format(new Date(booking.updated_at))}
+            </span>
           </div>
           <div className="mt-4 md:mt-0 flex justify-between md:justify-start items-center gap-4">
             <span className="font-semibold">
@@ -170,16 +172,23 @@ export function BookingCard({ booking }: IProps) {
                 {isCreatingPaymentSession ? "Loading..." : "Pay Now"}
               </Button>
             )}
-            {(isConfirmed || isPending) && !isMobile && <Separator orientation="vertical" />}
+            {(isConfirmed || isPending) && !isMobile && (
+              <Separator orientation="vertical" />
+            )}
             {isConfirmed && (
               <Button
                 className="cursor-pointer"
                 variant="default"
                 size="sm"
-                onClick={() => {}}
-                disabled={false}
+                asChild
               >
-                View Tickets
+                <Link
+                  to="/tickets/$bookingId"
+                  params={{ bookingId: booking.id }}
+                >
+                  <ExternalLink className="h-3.5 w-3.5" />
+                  View Tickets
+                </Link>
               </Button>
             )}
             {isPending && (

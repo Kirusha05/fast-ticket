@@ -49,11 +49,13 @@ export function SeatSelector({ seats }: IProps) {
   // Index seats by "row:col" for direct grid lookup, and track the grid bounds
   // from the highest row/col seen across all seats.
   const seatMap: Record<string, EventSeat> = {};
+  const seatIdMap: Record<string, string> = {};
   let totalRows = 0;
   let totalCols = 0;
   for (const seat of seats) {
     const { row, col } = parseSeatNumber(seat.seat_number);
     seatMap[`${row}:${col}`] = seat;
+    seatIdMap[seat.id] = seat.seat_number;
     if (row + 1 > totalRows) totalRows = row + 1;
     if (col + 1 > totalCols) totalCols = col + 1;
   }
@@ -121,6 +123,7 @@ export function SeatSelector({ seats }: IProps) {
           }),
         )}
       </div>
+      <p className="text-muted-foreground">Selected: {selectedSeatIds.map(seat_id => seatIdMap[seat_id]).join(", ") || "N/A"}</p>
     </div>
   );
 }

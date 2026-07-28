@@ -19,8 +19,8 @@ import {
   Skeleton,
   Separator,
 } from "@/components/ui";
-import { EventType } from "@/features/events/types";
-import type { Event } from "@/features/events/types";
+import { EventType, type Event } from "@/features/events/types";
+import { useAuth0 } from "@auth0/auth0-react";
 
 function getLowestPrice(event: Event): number | null {
   if (event.event_type === EventType.SEATED && event.seats.length > 0) {
@@ -46,7 +46,14 @@ function formatDateTime(dateStr: string): string {
 
 export function EventPage() {
   const { eventId } = Route.useParams();
-  const { data: event, isPending, isFetching, isError, error } = useGetEvent(eventId);
+  const {
+    data: event,
+    isPending,
+    isFetching,
+    isError,
+    error,
+  } = useGetEvent(eventId);
+  const { isAuthenticated, loginWithRedirect } = useAuth0();
 
   if (isPending) {
     return (
@@ -109,7 +116,8 @@ export function EventPage() {
 
   const lowestPrice = getLowestPrice(event);
   const formattedDate = formatDateTime(event.event_date);
-  const ticketNoun = event.event_type === EventType.SEATED ? "seats" : "tickets";
+  const ticketNoun =
+    event.event_type === EventType.SEATED ? "seats" : "tickets";
 
   return (
     <div className="space-y-10 container mx-auto">
@@ -196,9 +204,21 @@ export function EventPage() {
 
             <CardFooter>
               {event.available_tickets > 0 ? (
-                <Button className="w-full cursor-pointer" size="lg" asChild>
-                  <Link to="/bookings/new" search={{ event_id: event.id }}>Get Tickets</Link>
-                </Button>
+                isAuthenticated ? (
+                  <Button className="w-full cursor-pointer" size="lg" asChild>
+                    <Link to="/bookings/new" search={{ event_id: event.id }}>
+                      Get Tickets
+                    </Link>
+                  </Button>
+                ) : (
+                  <Button 
+                    className="w-full cursor-pointer" 
+                    size="lg" 
+                    onClick={() => loginWithRedirect()}
+                  >
+                    Sign In to Buy
+                  </Button>
+                )
               ) : (
                 <p className="w-full text-center text-sm text-muted-foreground">
                   SOLD OUT

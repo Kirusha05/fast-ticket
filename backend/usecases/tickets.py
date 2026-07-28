@@ -22,14 +22,21 @@ class TicketsUseCase:
         tickets = await self._tickets_repository.get_by_booking_id(booking_id)
         return tickets
 
-    async def validate_ticket(self, user: User, validate_request: ValidateTicketRequest) -> bool:
+    async def validate_ticket(self, user: User, validate_request: ValidateTicketRequest) -> Ticket:
         if user.role != UserRole.ADMIN:
             raise HTTPException(status_code=403, detail="You are not allowed to perform this action")
 
-        ticket_id = EntityId.from_string(validate_request.ticket_id)
+        try:
+            ticket_id = EntityId.from_string(validate_request.ticket_id)
+        except ValueError:
+            raise HTTPException(status_code=400, detail="Ticket ID is not valid")
+        
         ticket = await self._tickets_repository.get_by_id(ticket_id)
         if not ticket:
             raise HTTPException(status_code=404, detail="Ticket not found")
+
+        if ticket.status == TicketStatus.USED:
+            raise HTTPException(status_code=409, detail="Ticket already used")
 
         ticket.status = TicketStatus.USED
         ticket.checked_in_at = datetime.now(timezone.utc)

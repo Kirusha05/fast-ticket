@@ -17,6 +17,10 @@ class TicketsRepository(BaseRepository):
             tier_id=EventTier.build_entity_id_from_uuid(ticket_row["tier_id"]) if ticket_row.get("tier_id") else None,
             status=ticket_row["status"],
             checked_in_at=ticket_row["checked_in_at"],
+            seat_number=ticket_row["seat_number"] if ticket_row.get("seat_number") else None,
+            seat_price=float(ticket_row["seat_price"]) if ticket_row.get("seat_price") is not None else None,
+            tier_name=ticket_row["tier_name"] if ticket_row.get("tier_name") else None,
+            tier_price=float(ticket_row["tier_price"]) if ticket_row.get("tier_price") is not None else None,
             created_at=ticket_row["created_at"],
             updated_at=ticket_row["updated_at"],
         )
@@ -50,8 +54,19 @@ class TicketsRepository(BaseRepository):
     async def get_by_id(self, id: EntityId) -> Ticket | None:
         async with self.db_session.cursor() as cursor:
             await cursor.execute(
-                "SELECT * FROM tickets WHERE id = %s",
-                (id.value,),
+                """
+                SELECT 
+                    t.*,
+                    es.seat_number AS seat_number,
+                    es.price AS seat_price,
+                    et.name AS tier_name,
+                    btt.unit_price AS tier_price
+                FROM tickets t
+                LEFT JOIN event_seats es ON t.seat_id = es.id
+                LEFT JOIN booking_tiered_tickets btt ON btt.id = t.tier_id
+                LEFT JOIN event_tiers et ON btt.ticket_tier_id = et.id
+                WHERE t.id = %s
+                """, (id.value,),
             )
             db_ticket = await cursor.fetchone()
             if not db_ticket:
@@ -61,8 +76,19 @@ class TicketsRepository(BaseRepository):
     async def get_by_booking_id(self, booking_id: EntityId) -> list[Ticket]:
         async with self.db_session.cursor() as cursor:
             await cursor.execute(
-                "SELECT * FROM tickets WHERE booking_id = %s",
-                (booking_id.value,),
+                """
+                SELECT 
+                    t.*,
+                    es.seat_number AS seat_number,
+                    es.price AS seat_price,
+                    et.name AS tier_name,
+                    btt.unit_price AS tier_price
+                FROM tickets t
+                LEFT JOIN event_seats es ON t.seat_id = es.id
+                LEFT JOIN booking_tiered_tickets btt ON btt.id = t.tier_id
+                LEFT JOIN event_tiers et ON btt.ticket_tier_id = et.id
+                WHERE t.booking_id = %s
+                """, (booking_id.value,)
             )
             db_tickets = await cursor.fetchall()
             return [self._map_db_model_to_entity(db_ticket) for db_ticket in db_tickets]

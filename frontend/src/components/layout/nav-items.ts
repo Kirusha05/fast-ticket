@@ -1,4 +1,4 @@
-import { CalendarIcon, CircleDollarSignIcon, TicketIcon } from "lucide-react";
+import { CalendarIcon, CircleDollarSignIcon, ScanQrCode, TicketIcon } from "lucide-react";
 import type { LucideIcon } from "lucide-react";
 
 export interface NavItem {
@@ -15,4 +15,5 @@ export const NAV_ITEMS: readonly NavItem[] = [
   { to: "/events", label: "Events", icon: CalendarIcon, authRequired: false },
   { to: "/bookings", label: "Bookings", icon: TicketIcon, authRequired: true },
   { to: "/sales", label: "Sales", icon: CircleDollarSignIcon, authRequired: true, adminRequired: true },
+  { to: "/validate", label: "Validate", icon: ScanQrCode, authRequired: true, adminRequired: true },
 ] as const;

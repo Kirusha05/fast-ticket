@@ -402,7 +402,7 @@ class BookingsUseCase:
                     booking_id=booking.id,
                     event_id=booking.event_id,
                     seat_id=None,
-                    tier_id=tier.tier_id,
+                    tier_id=tier.id,
                     status=TicketStatus.UNUSED,
                     checked_in_at=None
                 ) for tier in enriched_booking.tiered_tickets

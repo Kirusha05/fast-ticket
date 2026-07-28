@@ -24,9 +24,10 @@ class Ticket(BaseEntity):
     checked_in_at: datetime | None = None
 
     # Join fields
-    event: Event | None = None
-    seat: EventSeat | None = None
-    tier: EventTier | None = None
+    seat_number: str | None = None
+    seat_price: float | None = None
+    tier_name: str | None = None
+    tier_price: float | None = None  # the price paid during booking, not necessarily the current tier price
 
     created_at: datetime | None = None
     updated_at: datetime | None = None

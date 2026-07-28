@@ -30,7 +30,7 @@ def upgrade() -> None:
         
         # One of these two will be filled, the other will be NULL
         sa.Column('seat_id', sa.UUID(as_uuid=True), sa.ForeignKey('event_seats.id', ondelete='RESTRICT'), nullable=True),
-        sa.Column('tier_id', sa.UUID(as_uuid=True), sa.ForeignKey('event_tiers.id', ondelete='RESTRICT'), nullable=True),
+        sa.Column('tier_id', sa.UUID(as_uuid=True), sa.ForeignKey('booking_tiered_tickets.id', ondelete='RESTRICT'), nullable=True),
         
         sa.Column('status', ticket_status_enum, nullable=False, default='unused'),
         sa.Column('checked_in_at', sa.DateTime(timezone=True), nullable=True),

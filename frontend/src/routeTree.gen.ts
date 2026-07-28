@@ -9,15 +9,22 @@
 // Additionally, you should also exclude this file from your linter and/or formatter to prevent it from being checked or modified.
 
 import { Route as rootRouteImport } from './routes/__root'
+import { Route as ValidateRouteImport } from './routes/validate'
 import { Route as SalesRouteImport } from './routes/sales'
 import { Route as EventsRouteImport } from './routes/events'
 import { Route as BookingsRouteImport } from './routes/bookings'
 import { Route as IndexRouteImport } from './routes/index'
+import { Route as TicketsBookingIdRouteImport } from './routes/tickets_.$bookingId'
 import { Route as EventsCreateRouteImport } from './routes/events_.create'
 import { Route as EventsEventIdRouteImport } from './routes/events_.$eventId'
 import { Route as BookingsNewRouteImport } from './routes/bookings_.new'
 import { Route as BookingsNewSuccessRouteImport } from './routes/bookings_.new_.success'
 
+const ValidateRoute = ValidateRouteImport.update({
+  id: '/validate',
+  path: '/validate',
+  getParentRoute: () => rootRouteImport,
+} as any)
 const SalesRoute = SalesRouteImport.update({
   id: '/sales',
   path: '/sales',
@@ -36,6 +43,11 @@ const BookingsRoute = BookingsRouteImport.update({
 const IndexRoute = IndexRouteImport.update({
   id: '/',
   path: '/',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const TicketsBookingIdRoute = TicketsBookingIdRouteImport.update({
+  id: '/tickets_/$bookingId',
+  path: '/tickets/$bookingId',
   getParentRoute: () => rootRouteImport,
 } as any)
 const EventsCreateRoute = EventsCreateRouteImport.update({
@@ -64,9 +76,11 @@ export interface FileRoutesByFullPath {
   '/bookings': typeof BookingsRoute
   '/events': typeof EventsRoute
   '/sales': typeof SalesRoute
+  '/validate': typeof ValidateRoute
   '/bookings/new': typeof BookingsNewRoute
   '/events/$eventId': typeof EventsEventIdRoute
   '/events/create': typeof EventsCreateRoute
+  '/tickets/$bookingId': typeof TicketsBookingIdRoute
   '/bookings/new/success': typeof BookingsNewSuccessRoute
 }
 export interface FileRoutesByTo {
@@ -74,9 +88,11 @@ export interface FileRoutesByTo {
   '/bookings': typeof BookingsRoute
   '/events': typeof EventsRoute
   '/sales': typeof SalesRoute
+  '/validate': typeof ValidateRoute
   '/bookings/new': typeof BookingsNewRoute
   '/events/$eventId': typeof EventsEventIdRoute
   '/events/create': typeof EventsCreateRoute
+  '/tickets/$bookingId': typeof TicketsBookingIdRoute
   '/bookings/new/success': typeof BookingsNewSuccessRoute
 }
 export interface FileRoutesById {
@@ -85,9 +101,11 @@ export interface FileRoutesById {
   '/bookings': typeof BookingsRoute
   '/events': typeof EventsRoute
   '/sales': typeof SalesRoute
+  '/validate': typeof ValidateRoute
   '/bookings_/new': typeof BookingsNewRoute
   '/events_/$eventId': typeof EventsEventIdRoute
   '/events_/create': typeof EventsCreateRoute
+  '/tickets_/$bookingId': typeof TicketsBookingIdRoute
   '/bookings_/new_/success': typeof BookingsNewSuccessRoute
 }
 export interface FileRouteTypes {
@@ -97,9 +115,11 @@ export interface FileRouteTypes {
     | '/bookings'
     | '/events'
     | '/sales'
+    | '/validate'
     | '/bookings/new'
     | '/events/$eventId'
     | '/events/create'
+    | '/tickets/$bookingId'
     | '/bookings/new/success'
   fileRoutesByTo: FileRoutesByTo
   to:
@@ -107,9 +127,11 @@ export interface FileRouteTypes {
     | '/bookings'
     | '/events'
     | '/sales'
+    | '/validate'
     | '/bookings/new'
     | '/events/$eventId'
     | '/events/create'
+    | '/tickets/$bookingId'
     | '/bookings/new/success'
   id:
     | '__root__'
@@ -117,9 +139,11 @@ export interface FileRouteTypes {
     | '/bookings'
     | '/events'
     | '/sales'
+    | '/validate'
     | '/bookings_/new'
     | '/events_/$eventId'
     | '/events_/create'
+    | '/tickets_/$bookingId'
     | '/bookings_/new_/success'
   fileRoutesById: FileRoutesById
 }
@@ -128,14 +152,23 @@ export interface RootRouteChildren {
   BookingsRoute: typeof BookingsRoute
   EventsRoute: typeof EventsRoute
   SalesRoute: typeof SalesRoute
+  ValidateRoute: typeof ValidateRoute
   BookingsNewRoute: typeof BookingsNewRoute
   EventsEventIdRoute: typeof EventsEventIdRoute
   EventsCreateRoute: typeof EventsCreateRoute
+  TicketsBookingIdRoute: typeof TicketsBookingIdRoute
   BookingsNewSuccessRoute: typeof BookingsNewSuccessRoute
 }
 
 declare module '@tanstack/react-router' {
   interface FileRoutesByPath {
+    '/validate': {
+      id: '/validate'
+      path: '/validate'
+      fullPath: '/validate'
+      preLoaderRoute: typeof ValidateRouteImport
+      parentRoute: typeof rootRouteImport
+    }
     '/sales': {
       id: '/sales'
       path: '/sales'
@@ -162,6 +195,13 @@ declare module '@tanstack/react-router' {
       path: '/'
       fullPath: '/'
       preLoaderRoute: typeof IndexRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/tickets_/$bookingId': {
+      id: '/tickets_/$bookingId'
+      path: '/tickets/$bookingId'
+      fullPath: '/tickets/$bookingId'
+      preLoaderRoute: typeof TicketsBookingIdRouteImport
       parentRoute: typeof rootRouteImport
     }
     '/events_/create': {
@@ -200,9 +240,11 @@ const rootRouteChildren: RootRouteChildren = {
   BookingsRoute: BookingsRoute,
   EventsRoute: EventsRoute,
   SalesRoute: SalesRoute,
+  ValidateRoute: ValidateRoute,
   BookingsNewRoute: BookingsNewRoute,
   EventsEventIdRoute: EventsEventIdRoute,
   EventsCreateRoute: EventsCreateRoute,
+  TicketsBookingIdRoute: TicketsBookingIdRoute,
   BookingsNewSuccessRoute: BookingsNewSuccessRoute,
 }
 export const routeTree = rootRouteImport
