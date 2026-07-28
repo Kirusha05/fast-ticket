@@ -190,6 +190,10 @@ async def test_booking_create_open_field(
     assert len(successful) == 5000  # 5000 bookings x 2 tickets each = 10000 total available tickets for the event
     assert len(failed) == 1000  # other 1000 should fail
 
+    assert (
+        mock_stripe_client.v1.checkout.sessions.create_async.call_count == 5000
+    )
+
     # verify that exactly 5000 bookings were created
     cursor = await db_session.execute(
         "SELECT COUNT(*) FROM bookings"
