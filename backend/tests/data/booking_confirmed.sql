@@ -20,7 +20,7 @@ VALUES
         2,
         100.00,
         'usd',
-        NULL
+        NOW()
     ),
     -- user 1, seated event, seats A1 + A2 @ $150 each = $300
     (
@@ -31,7 +31,7 @@ VALUES
         2,
         300.00,
         'usd',
-        NULL
+        NOW()
     ),
     -- user 2, open field event, 1 General ticket @ $50 = $50
     (
@@ -42,7 +42,7 @@ VALUES
         1,
         50.00,
         'usd',
-        NULL
+        NOW()
     );
 
 -- Booking #1: 2 General tiered tickets

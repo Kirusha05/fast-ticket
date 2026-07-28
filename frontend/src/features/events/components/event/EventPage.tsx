@@ -21,6 +21,7 @@ import {
 } from "@/components/ui";
 import { EventType, type Event } from "@/features/events/types";
 import { useAuth0 } from "@auth0/auth0-react";
+import { cn } from "@/lib/utils";
 
 function getLowestPrice(event: Event): number | null {
   if (event.event_type === EventType.SEATED && event.seats.length > 0) {
@@ -119,6 +120,8 @@ export function EventPage() {
   const ticketNoun =
     event.event_type === EventType.SEATED ? "seats" : "tickets";
 
+  const eventAlreadyStarted = new Date() > new Date(event.event_date);
+
   return (
     <div className="space-y-10 container mx-auto">
       {/* Banner image */}
@@ -135,7 +138,9 @@ export function EventPage() {
       {/* Two-column layout */}
       <div className="grid grid-cols-1 gap-8 lg:grid-cols-8">
         {/* Left column, event details */}
-        <div className="space-y-4 lg:col-span-6">
+        <div className={
+          cn("space-y-4", eventAlreadyStarted ? "lg:col-span-8" : "lg:col-span-6")}
+        >
           {/* Event name */}
           <h1 className="text-3xl font-bold tracking-tight">{event.name}</h1>
           {/* Description */}
@@ -169,64 +174,66 @@ export function EventPage() {
         </div>
 
         {/* Right column, ticket CTA card */}
-        <div className="lg:col-span-2">
-          <Card className="sticky top-6">
-            <CardHeader>
-              <div className="flex items-center justify-start gap-0.5">
-                <Ticket className="h-5 w-5 text-muted-foreground mr-2" />
-                <CardTitle>Tickets</CardTitle>
-              </div>
-            </CardHeader>
+        {!eventAlreadyStarted && (
+          <div className="lg:col-span-2">
+            <Card className="sticky top-6">
+              <CardHeader>
+                <div className="flex items-center justify-start gap-0.5">
+                  <Ticket className="h-5 w-5 text-muted-foreground mr-2" />
+                  <CardTitle>Tickets</CardTitle>
+                </div>
+              </CardHeader>
 
-            <Separator />
+              <Separator />
 
-            <CardContent className="space-y-4 pt-4">
-              {/* Available count */}
-              <div className="text-center">
-                <span className="text-4xl font-bold tracking-tight">
-                  {event.available_tickets}
-                </span>
-                <p className="text-sm text-muted-foreground">
-                  {ticketNoun} left
-                </p>
-              </div>
-
-              {/* Starting price */}
-              {lowestPrice !== null && (
-                <p className="text-center text-sm text-muted-foreground">
-                  Tickets starting from{" "}
-                  <span className="font-semibold text-foreground">
-                    ${lowestPrice.toFixed(2)}
+              <CardContent className="space-y-4 pt-4">
+                {/* Available count */}
+                <div className="text-center">
+                  <span className="text-4xl font-bold tracking-tight">
+                    {event.available_tickets}
                   </span>
-                </p>
-              )}
-            </CardContent>
+                  <p className="text-sm text-muted-foreground">
+                    {ticketNoun} left
+                  </p>
+                </div>
 
-            <CardFooter>
-              {event.available_tickets > 0 ? (
-                isAuthenticated ? (
-                  <Button className="w-full cursor-pointer" size="lg" asChild>
-                    <Link to="/bookings/new" search={{ event_id: event.id }}>
-                      Get Tickets
-                    </Link>
-                  </Button>
+                {/* Starting price */}
+                {lowestPrice !== null && (
+                  <p className="text-center text-sm text-muted-foreground">
+                    Tickets starting from{" "}
+                    <span className="font-semibold text-foreground">
+                      ${lowestPrice.toFixed(2)}
+                    </span>
+                  </p>
+                )}
+              </CardContent>
+
+              <CardFooter>
+                {event.available_tickets > 0 ? (
+                  isAuthenticated ? (
+                    <Button className="w-full cursor-pointer" size="lg" asChild>
+                      <Link to="/bookings/new" search={{ event_id: event.id }}>
+                        Get Tickets
+                      </Link>
+                    </Button>
+                  ) : (
+                    <Button
+                      className="w-full cursor-pointer"
+                      size="lg"
+                      onClick={() => loginWithRedirect()}
+                    >
+                      Sign In to Buy
+                    </Button>
+                  )
                 ) : (
-                  <Button 
-                    className="w-full cursor-pointer" 
-                    size="lg" 
-                    onClick={() => loginWithRedirect()}
-                  >
-                    Sign In to Buy
-                  </Button>
-                )
-              ) : (
-                <p className="w-full text-center text-sm text-muted-foreground">
-                  SOLD OUT
-                </p>
-              )}
-            </CardFooter>
-          </Card>
-        </div>
+                  <p className="w-full text-center text-sm text-muted-foreground">
+                    SOLD OUT
+                  </p>
+                )}
+              </CardFooter>
+            </Card>
+          </div>
+        )}
       </div>
 
       {/* Background fetching indicator */}

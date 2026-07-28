@@ -257,7 +257,6 @@ async def test_stripe_booking_expired_webhook(
     row = await cursor.fetchone()
     print(row)
     assert row['status'] == 'expired'
-    assert not row['expires_at']
 
     # check the updated payment row
     cursor = await db_session.execute(

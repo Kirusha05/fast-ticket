@@ -44,7 +44,7 @@ async def stripe_webhook(
         stripe_session_id = data["id"]
         booking_id_raw = data["metadata"]["booking_id"]
         booking_id = EntityId.from_string(booking_id_raw)
-        await bookings_use_case.expire_booking(booking_id, stripe_session_id)
+        await bookings_use_case.expire_booking_stripe(booking_id, stripe_session_id)
 
     # always return with status 200 (data doesn't matter) so Stripe doesn't keep retrying events we've already handled
     return { "success": True }

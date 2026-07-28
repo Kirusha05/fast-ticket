@@ -69,12 +69,6 @@ class BookingsUseCase:
         else:
             raise HTTPException(status_code=400, detail=f"Unknown event type: {event.event_type}")
 
-        # release the seat locks before calling the Stripe API, so other booking requests can get rejected immediately
-        await self.db_session.commit()
-
-        # decided to create the payment session directly after the booking, so a booking always has a corresponding payment
-        # the user just fetches the checkout_url later on
-        await self.create_payment_session(user, created_booking.id)
         return created_booking
 
     async def _create_seated_booking(
@@ -271,6 +265,16 @@ class BookingsUseCase:
 
     async def get_user_bookings(self, user_id: EntityId) -> list[BookingResponse]:
         bookings = await self._bookings_repository.get_by_user_id(user_id)
+
+        for booking in bookings:
+            # lazy expiration
+            if booking.status == BookingStatus.PENDING and booking.expires_at <= datetime.now(timezone.utc) - timedelta(minutes=1):
+                # may also fetch the Stripe API to check the payment status
+                # there may be a small time window after the user paid but the Stripe webhook did non arrive yet
+                # used this 1 minute delay to account for any webhook delays, but an additional Stripe call may be even better
+                await self._expire_booking(booking)
+                await self.db_session.commit()  # commit early
+
         enriched = await self._enrich_bookings(bookings)
         return enriched
 
@@ -285,14 +289,9 @@ class BookingsUseCase:
         if booking.status != BookingStatus.PENDING:
              raise HTTPException(status_code=409, detail="Booking already confirmed/expired/cancelled")
 
-        if booking.expires_at and booking.expires_at < datetime.now(timezone.utc):
-            booking.status = BookingStatus.EXPIRED
-            booking.expires_at = None
-            await self._bookings_repository.update(booking_id, booking)
-            await self._release_booking_resources(booking, throw=False)  # make sure to not throw
-            payment = await self._payments_repository.get_by_booking_id(booking.id)
-            payment.status = PaymentStatus.EXPIRED
-            await self._payments_repository.update(payment.id, payment)
+        # lazy expiration
+        if booking.expires_at <= datetime.now(timezone.utc) - timedelta(minutes=1):
+            await self._expire_booking(booking)
             await self.db_session.commit()  # must commit before raising or the updates will get rolled back
 
             raise HTTPException(status_code=409, detail="Booking expired")
@@ -438,25 +437,31 @@ class BookingsUseCase:
             await self._booking_tiered_tickets_repository.delete_by_booking_id(booking.id)
             await self._events_repository.increment_available_tickets(event.id, booking.ticket_count)
 
+    async def _expire_booking(self, booking: Booking, throw: bool = True):
+        booking.status = BookingStatus.EXPIRED
+        await self._bookings_repository.update(booking.id, booking)
+
+        await self._release_booking_resources(booking, throw=throw)  # make sure to not throw
+
+        # will not run if the user never clicked Pay Now and did not creat a Checkout Session
+        payment = await self._payments_repository.get_by_booking_id(booking.id)
+        if payment:
+            payment.status = PaymentStatus.EXPIRED
+            await self._payments_repository.update(payment.id, payment)
+
     # will be called by the Stripe webhook, MUST return status 2xx
-    async def expire_booking(self, booking_id: EntityId, stripe_session_id: str):
+    async def expire_booking_stripe(self, booking_id: EntityId, stripe_session_id: str):
         booking = await self._bookings_repository.get_by_id_for_update(booking_id)
         if not booking:
             return
-        
+
         # Return (status 200) if booking was already confirmed/expired/cancelled
         if booking.status != BookingStatus.PENDING:
             return
-
-        booking.status = BookingStatus.EXPIRED
-        booking.expires_at = None
-        await self._bookings_repository.update(booking_id, booking)
-
-        await self._release_booking_resources(booking, throw=False)  # make sure to not throw
-
-        payment = await self._payments_repository.get_by_stripe_session_id(stripe_session_id)
-        payment.status = PaymentStatus.EXPIRED
-        await self._payments_repository.update(payment.id, payment)
+        
+        # ended up not using stripe_session_id, as we can fetch the payment row by booking id
+        # we can do this because we have the 1 payment row for 1 booking row business rule
+        await self._expire_booking(booking, throw=False)
 
     # will be called by the user
     async def cancel_booking(self, user_id: EntityId, booking_id: EntityId) -> BookingResponse:

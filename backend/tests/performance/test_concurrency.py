@@ -90,9 +90,6 @@ async def test_booking_create_seated(
     assert len(successful) == 1
     assert len(failed) == num_requests - 1
 
-    # only one booking -> only one Stripe call
-    assert mock_stripe_client.v1.checkout.sessions.create_async.call_count == 1
-
     # verify that only one booking was created
     cursor = await db_session.execute(
         "SELECT COUNT(*) FROM bookings"
@@ -189,10 +186,6 @@ async def test_booking_create_open_field(
     assert all(r.status_code in (201, 409) for r in responses)
     assert len(successful) == 5000  # 5000 bookings x 2 tickets each = 10000 total available tickets for the event
     assert len(failed) == 1000  # other 1000 should fail
-
-    assert (
-        mock_stripe_client.v1.checkout.sessions.create_async.call_count == 5000
-    )
 
     # verify that exactly 5000 bookings were created
     cursor = await db_session.execute(
