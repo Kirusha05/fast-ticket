@@ -1,7 +1,7 @@
 from fastapi import Request, HTTPException, Depends
 import httpx
 from jose import jwt, JWTError
-from config.config import config
+from config.config import Mode, config
 from config.db_session import get_db_session
 
 from models import User
@@ -25,6 +25,28 @@ def _get_jwks() -> dict:
 async def get_current_user(
     request: Request, db=Depends(get_db_session)
 ) -> User:
+    # skip Auth0 tokens during load testing
+    if config.MODE == Mode.LOAD_TEST:
+        auth0_id = request.headers.get("X-Load-Test-User")
+
+        if not auth0_id:
+            print("Missing load test user")
+            raise HTTPException(
+                status_code=401,
+                detail="Missing load test user",
+            )
+
+        users_use_case = UsersUseCase(db)
+        user = await users_use_case.get_by_auth0_id(auth0_id)
+
+        if not user:
+            raise HTTPException(
+                status_code=401,
+                detail="Load test user does not exist",
+            )
+
+        return user
+
     # 1. Extract the Bearer token
     auth_header = request.headers.get("Authorization", "")
     if not auth_header.startswith("Bearer "):
@@ -43,9 +65,6 @@ async def get_current_user(
         )
     except JWTError as e:
         raise HTTPException(status_code=401, detail=f"Invalid token: {e}")
-
-    # print("PAYLOAD")
-    # print(payload)
 
     auth0_id: str | None = payload.get("sub")  # e.g. "auth0|64f3a..."
     if not auth0_id:

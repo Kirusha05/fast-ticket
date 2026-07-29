@@ -10,6 +10,7 @@ class Mode(StrEnum):
     DEV = 'dev'
     PROD = 'prod'
     CLOUD = 'cloud'
+    LOAD_TEST = 'load_test'
 
 
 _MODE_TO_ENVFILE = {
@@ -17,6 +18,7 @@ _MODE_TO_ENVFILE = {
     Mode.TEST: '.env.test',
     Mode.PROD: '.env.prod',
     Mode.DEV: '.env.dev',
+    Mode.LOAD_TEST: '.env.test'
 }
 
 
@@ -112,8 +114,9 @@ class Config(BaseSettings):
 
 
 config = Config()
-print("-" * 36)
-print("Loaded config: ", config.model_dump_json(indent=2))
-print("-" * 36)
+print(f"Config.MODE = {config.MODE}")
+# print("-" * 36)
+# print("Loaded config: ", config.model_dump_json(indent=2))
+# print("-" * 36)
 
 stripe.api_key = config.STRIPE.SECRET_KEY
