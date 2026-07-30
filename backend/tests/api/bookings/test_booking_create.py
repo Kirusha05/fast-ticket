@@ -6,7 +6,7 @@ import pytest
 
 @pytest.mark.asyncio
 @patch("usecases.bookings.stripe_client")
-async def test_booking_create_open_field(
+async def test_booking_create_tiered(
     mock_stripe_client, test_client: TestClient, db_session: AsyncConnection, override_current_user_dummy
 ):
     """
@@ -15,7 +15,7 @@ async def test_booking_create_open_field(
         - User 1 (u-11111111-...), "Test User"
 
       Events:
-        - Summerfest (e-11111111-...), open_field, 10000 total/available
+        - Summerfest (e-11111111-...), tiered, 10000 total/available
         - Opera Night (e-22222222-...), seated, 1000 total/available
         - Rock Arena (e-33333333-...), seated, 500 total/available
 
@@ -99,7 +99,7 @@ async def test_booking_create_seated(
         - User 1 (u-11111111-...), "Test User"
 
       Events:
-        - Summerfest (e-11111111-...), open_field, 10000 total/available
+        - Summerfest (e-11111111-...), tiered, 10000 total/available
         - Opera Night (e-22222222-...), seated, 1000 total/available
         - Rock Arena (e-33333333-...), seated, 500 total/available
 
@@ -185,7 +185,7 @@ async def test_booking_create_seated_wrong_event_seats(
         - User 1 (u-11111111-...), "Test User"
 
       Events:
-        - Summerfest (e-11111111-...), open_field, 10000 total/available
+        - Summerfest (e-11111111-...), tiered, 10000 total/available
         - Opera Night (e-22222222-...), seated, 1000 total/available
         - Rock Arena (e-33333333-...), seated, 500 total/available
 
@@ -239,7 +239,7 @@ async def test_booking_create_seated_nonexistent_seats(
         - User 1 (u-11111111-...), "Test User"
 
       Events:
-        - Summerfest (e-11111111-...), open_field, 10000 total/available
+        - Summerfest (e-11111111-...), tiered, 10000 total/available
         - Opera Night (e-22222222-...), seated, 1000 total/available
         - Rock Arena (e-33333333-...), seated, 500 total/available
 
@@ -291,7 +291,7 @@ async def test_booking_create_seated_seat_already_taken(
         - User 2 (u-22222222-...), "Second User"
 
       Events:
-        - Summerfest (e-11111111-...), open_field, 9997 available (was 10000, 3 taken)
+        - Summerfest (e-11111111-...), tiered, 9997 available (was 10000, 3 taken)
         - Opera Night (e-22222222-...), seated, 998 available (was 1000, 2 taken)
         - Rock Arena (e-33333333-...), seated, 500 total/available
 
@@ -345,7 +345,7 @@ async def test_booking_create_seated_seat_already_taken(
     assert data["detail"] == "One or more seats are already taken: A2"
 
 
-async def test_booking_create_open_field_zero_tickets(
+async def test_booking_create_tiered_zero_tickets(
     test_client: TestClient, db_session: AsyncConnection, override_current_user_dummy
 ):
     """
@@ -354,7 +354,7 @@ async def test_booking_create_open_field_zero_tickets(
         - User 1 (u-11111111-...), "Test User"
 
       Events:
-        - Summerfest (e-11111111-...), open_field, 10000 total/available
+        - Summerfest (e-11111111-...), tiered, 10000 total/available
         - Opera Night (e-22222222-...), seated, 1000 total/available
         - Rock Arena (e-33333333-...), seated, 500 total/available
 
@@ -402,7 +402,7 @@ async def test_booking_create_request_includes_both_tiered_and_seated(
         - User 1 (u-11111111-...), "Test User"
 
       Events:
-        - Summerfest (e-11111111-...), open_field, 10000 total/available
+        - Summerfest (e-11111111-...), tiered, 10000 total/available
         - Opera Night (e-22222222-...), seated, 1000 total/available
         - Rock Arena (e-33333333-...), seated, 500 total/available
 
@@ -454,7 +454,7 @@ async def test_booking_create_request_includes_both_tiered_and_seated(
 
 @pytest.mark.asyncio
 @patch("usecases.bookings.stripe_client")
-async def test_booking_create_open_field_no_tickets_left(
+async def test_booking_create_tiered_no_tickets_left(
     mock_stripe_client, test_client: TestClient, db_session: AsyncConnection, override_current_user_dummy
 ):
     """
@@ -463,7 +463,7 @@ async def test_booking_create_open_field_no_tickets_left(
         - User 1 (u-11111111-...), "Test User"
 
       Events:
-        - Summerfest (e-11111111-...), open_field, 10000 total/available
+        - Summerfest (e-11111111-...), tiered, 10000 total/available
         - Opera Night (e-22222222-...), seated, 1000 total/available
         - Rock Arena (e-33333333-...), seated, 500 total/available
 
@@ -512,7 +512,7 @@ async def test_booking_create_open_field_no_tickets_left(
 
 @pytest.mark.asyncio
 @patch("usecases.bookings.stripe_client")
-async def test_booking_create_open_field_non_existing_tier(
+async def test_booking_create_tiered_non_existing_tier(
     mock_stripe_client, test_client: TestClient, db_session: AsyncConnection, override_current_user_dummy
 ):
     """
@@ -521,7 +521,7 @@ async def test_booking_create_open_field_non_existing_tier(
         - User 1 (u-11111111-...), "Test User"
 
       Events:
-        - Summerfest (e-11111111-...), open_field, 10000 total/available
+        - Summerfest (e-11111111-...), tiered, 10000 total/available
         - Opera Night (e-22222222-...), seated, 1000 total/available
         - Rock Arena (e-33333333-...), seated, 500 total/available
 
@@ -569,7 +569,7 @@ async def test_booking_create_open_field_non_existing_tier(
 
 @pytest.mark.asyncio
 @patch("usecases.bookings.stripe_client")
-async def test_booking_create_open_field_tier_not_belonging_to_event(
+async def test_booking_create_tiered_tier_not_belonging_to_event(
     mock_stripe_client, test_client: TestClient, db_session: AsyncConnection, override_current_user_dummy
 ):
     """
@@ -578,7 +578,7 @@ async def test_booking_create_open_field_tier_not_belonging_to_event(
         - User 1 (u-11111111-...), "Test User"
 
       Events:
-        - Summerfest (e-11111111-...), open_field, 10000 total/available
+        - Summerfest (e-11111111-...), tiered, 10000 total/available
         - Opera Night (e-22222222-...), seated, 1000 total/available
         - Rock Arena (e-33333333-...), seated, 500 total/available
 

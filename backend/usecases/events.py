@@ -18,7 +18,7 @@ class EventsUseCase:
 
         if event_request.event_type == EventType.SEATED:
             total_tickets = len(event_request.seats)
-        elif event_request.event_type == EventType.OPEN_FIELD:
+        elif event_request.event_type == EventType.TIERED:
             total_tickets = sum(t.total_tickets for t in event_request.tiers)
         else:
             raise HTTPException(status_code=400, detail=f"Unknown event type: {event_request.event_type}")

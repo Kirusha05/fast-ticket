@@ -15,7 +15,7 @@ VALUES (
     'Cel mai tare festival al verii',
     'Gradina Botanica',
     '2027-08-21',
-    'open_field',
+    'tiered',
     'https://t4.ftcdn.net/jpg/06/00/62/77/360_F_600627754_uKAUfEHyXUdPHlZWldI47Z5TqZpGKhB7.jpg',
     20000,
     20000
@@ -26,7 +26,7 @@ VALUES (
     'Cel mai tare festival al verii',
     'Gradina Botanica',
     '2027-08-21',
-    'open_field',
+    'tiered',
     'https://t4.ftcdn.net/jpg/06/00/62/77/360_F_600627754_uKAUfEHyXUdPHlZWldI47Z5TqZpGKhB7.jpg',
     200000,
     200000

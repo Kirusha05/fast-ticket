@@ -39,7 +39,7 @@ VALUES (
     'Cel mai tare festival al verii',
     'Gradina Botanica',
     '2026-06-21',
-    'open_field',
+    'tiered',
     'https://t4.ftcdn.net/jpg/06/00/62/77/360_F_600627754_uKAUfEHyXUdPHlZWldI47Z5TqZpGKhB7.jpg',
     10000,
     10000
@@ -148,7 +148,7 @@ INSERT INTO bookings (
     expires_at
 )
 VALUES
--- user 1, open field event, 2 General tickets @ $50 each = $100
+-- user 1, tiered event, 2 General tickets @ $50 each = $100
 (
     '10000000-0000-0000-0000-000000000001',
     '11111111-1111-1111-1111-111111111111',
@@ -170,7 +170,7 @@ VALUES
     'usd',
     NOW() + INTERVAL '30 minutes'   -- expires 30 min from insert time
 ),
--- user 2, open field event, 1 General ticket @ $50 = $50
+-- user 2, tiered event, 1 General ticket @ $50 = $50
 (
     '10000000-0000-0000-0000-000000000003',
     '22222222-2222-2222-2222-222222222222',
@@ -246,7 +246,7 @@ UPDATE event_tiers
 SET available_tickets = 9997
 WHERE id = '77777777-7777-7777-7777-777777777777';
 
--- Reflect the booked open_field tickets: 3 of the 10000 are taken
+-- Reflect the booked tiered tickets: 3 of the 10000 are taken
 UPDATE events
 SET available_tickets = 9997
 WHERE id = '11111111-1111-1111-1111-111111111111';

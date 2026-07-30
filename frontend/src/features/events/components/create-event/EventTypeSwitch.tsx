@@ -22,14 +22,14 @@ export function EventTypeSwitch() {
         </button>
         <button
           type="button"
-          onClick={() => setEventType(EventType.OPEN_FIELD)}
+          onClick={() => setEventType(EventType.TIERED)}
           className={`px-4 py-1.5 text-sm font-medium transition-colors ${
-            eventType === EventType.OPEN_FIELD
+            eventType === EventType.TIERED
               ? "bg-primary text-primary-foreground"
               : "bg-background text-muted-foreground hover:bg-muted"
           }`}
         >
-          Open Field
+          Tiered
         </button>
       </div>
     </div>

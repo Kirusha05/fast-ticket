@@ -29,7 +29,7 @@ export const EventDetailSection: React.FC = () => {
         />
       )}
 
-      {selectedEvent && selectedEvent.event_type == EventType.OPEN_FIELD && (
+      {selectedEvent && selectedEvent.event_type == EventType.TIERED && (
         <EventTiersBreakdown
           selectedEvent={selectedEvent}
           dateRange={dateRange}

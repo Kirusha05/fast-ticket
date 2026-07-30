@@ -19,7 +19,7 @@ async def test_booking_create_seated(
         - User 1 (u-11111111-...), "Test User"
 
       Events:
-        - Summerfest (e-11111111-...), open_field, 10000 total/available
+        - Summerfest (e-11111111-...), tiered, 10000 total/available
         - Opera Night (e-22222222-...), seated, 1000 total/available
         - Rock Arena (e-33333333-...), seated, 500 total/available
 
@@ -108,7 +108,7 @@ async def test_booking_create_seated(
 
 @pytest.mark.asyncio
 @patch("usecases.bookings.stripe_client")
-async def test_booking_create_open_field(
+async def test_booking_create_tiered(
     mock_stripe_client, db_session: AsyncConnection, override_current_user_dummy
 ):
     """
@@ -117,7 +117,7 @@ async def test_booking_create_open_field(
         - User 1 (u-11111111-...), "Test User"
 
       Events:
-        - Summerfest (e-11111111-...), open_field, 10000 total/available
+        - Summerfest (e-11111111-...), tiered, 10000 total/available
         - Opera Night (e-22222222-...), seated, 1000 total/available
         - Rock Arena (e-33333333-...), seated, 500 total/available
 

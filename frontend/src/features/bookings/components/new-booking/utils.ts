@@ -38,7 +38,7 @@ export function sumTiersPrice(
 /**
  * How many tickets the current selection represents:
  *  - SEATED: one per selected seat
- *  - OPEN_FIELD: the sum of all tier counts
+ *  - TIERED: the sum of all tier counts
  */
 export function countTickets(
   event: Event,
@@ -52,7 +52,7 @@ export function countTickets(
 /**
  * Build the POST /bookings body from the current selection.
  *  - SEATED     → { event_id, seat_ids }
- *  - OPEN_FIELD → { event_id, tiered_tickets: [{ tier_id, count }] }
+ *  - TIERED → { event_id, tiered_tickets: [{ tier_id, count }] }
  *    (tiers with a count of 0 are dropped — the backend rejects empty entries)
  */
 export function buildBookingRequest(

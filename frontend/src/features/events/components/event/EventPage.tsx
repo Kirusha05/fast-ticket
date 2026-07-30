@@ -27,7 +27,7 @@ function getLowestPrice(event: Event): number | null {
   if (event.event_type === EventType.SEATED && event.seats.length > 0) {
     return Math.min(...event.seats.map((s) => s.price));
   }
-  if (event.event_type === EventType.OPEN_FIELD && event.tiers.length > 0) {
+  if (event.event_type === EventType.TIERED && event.tiers.length > 0) {
     return Math.min(...event.tiers.map((t) => t.price));
   }
   return null;

@@ -5,7 +5,7 @@ import json
 async def test_events_get_one(test_client: TestClient, db_session: AsyncConnection):
     """
     Setup:
-      - Summerfest, open_field, 10000 available
+      - Summerfest, tiered, 10000 available
       - Opera Night, seated, 1000 available
       - Rock Arena, seated, 500 available
     """
@@ -24,7 +24,7 @@ async def test_events_get_one(test_client: TestClient, db_session: AsyncConnecti
     assert data["name"] == "Summerfest"
     assert data["description"] == "Cel mai tare festival al verii"
     assert data["venue"] == "Gradina Botanica"
-    assert data["event_type"] == "open_field"
+    assert data["event_type"] == "tiered"
     assert data["total_tickets"] == 10000
     assert data["available_tickets"] == 10000
     assert len(data["seats"]) == 0

@@ -12,7 +12,7 @@ async def test_ticket_validate_by_admin_user(test_client: TestClient, db_session
         - User 2 (u-22222222-...), "Second User"
 
       Events:
-        - Summerfest (e-11111111-...), open_field, 9997 available (was 10000, 3 taken)
+        - Summerfest (e-11111111-...), tiered, 9997 available (was 10000, 3 taken)
         - Opera Night (e-22222222-...), seated, 998 available (was 1000, 2 taken)
         - Rock Arena (e-33333333-...), seated, 500 total/available
 
@@ -64,7 +64,7 @@ async def test_ticket_validate_by_simple_user(test_client: TestClient, db_sessio
         - User 2 (u-22222222-...), "Second User"
 
       Events:
-        - Summerfest (e-11111111-...), open_field, 9997 available (was 10000, 3 taken)
+        - Summerfest (e-11111111-...), tiered, 9997 available (was 10000, 3 taken)
         - Opera Night (e-22222222-...), seated, 998 available (was 1000, 2 taken)
         - Rock Arena (e-33333333-...), seated, 500 total/available
 
@@ -115,7 +115,7 @@ async def test_ticket_validate_already_used(test_client: TestClient, db_session:
         - User 2 (u-22222222-...), "Second User"
 
       Events:
-        - Summerfest (e-11111111-...), open_field, 9997 available (was 10000, 3 taken)
+        - Summerfest (e-11111111-...), tiered, 9997 available (was 10000, 3 taken)
         - Opera Night (e-22222222-...), seated, 998 available (was 1000, 2 taken)
         - Rock Arena (e-33333333-...), seated, 500 total/available
 

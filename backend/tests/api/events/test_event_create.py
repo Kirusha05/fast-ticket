@@ -6,7 +6,7 @@ import json
 def test_event_create_with_tickets(test_client: TestClient, db_session: AsyncConnection, override_current_user_admin):
     """
     Setup: empty database.
-    POST a new open_field event Summerfest with 1 tier (General, $50, 10000 tickets).
+    POST a new tiered event Summerfest with 1 tier (General, $50, 10000 tickets).
     Event created with total_tickets=10000, available_tickets=10000.
     """
     override_current_user_admin()  # bypass authorization
@@ -16,7 +16,7 @@ def test_event_create_with_tickets(test_client: TestClient, db_session: AsyncCon
         "description": "Cel mai tare festival al verii",
         "venue": "Gradina Botanica",
         "event_date": "2026-06-21",
-        "event_type": "open_field",
+        "event_type": "tiered",
         "banner_url": "https://t4.ftcdn.net/jpg/06/00/62/77/360_F_600627754_uKAUfEHyXUdPHlZWldI47Z5TqZpGKhB7.jpg",
         "tiers": [
             {"name": "General", "price": 50.0, "total_tickets": 10000}
@@ -33,7 +33,7 @@ def test_event_create_with_tickets(test_client: TestClient, db_session: AsyncCon
     assert data["description"] == request["description"]
     assert data["venue"] == request["venue"]
     assert data["event_date"] is not None
-    assert data["event_type"] == "open_field"
+    assert data["event_type"] == "tiered"
     assert data["banner_url"] == request["banner_url"]
     assert data["total_tickets"] == 10000
     assert data["available_tickets"] == 10000
@@ -90,8 +90,8 @@ async def test_event_create_with_seats(test_client: TestClient, db_session: Asyn
 def test_event_create_without_tickets(test_client: TestClient, db_session: AsyncConnection, override_current_user_dummy):
     """
     Setup: empty database.
-    POST an open_field event without providing any tiers -> reject with 422
-    (Pydantic model_validator enforces that open_field events require tiers).
+    POST an tiered event without providing any tiers -> reject with 422
+    (Pydantic model_validator enforces that tiered events require tiers).
     """
 
     override_current_user_dummy()  # bypass authorization
@@ -101,7 +101,7 @@ def test_event_create_without_tickets(test_client: TestClient, db_session: Async
         "description": "Cel mai tare festival al verii",
         "venue": "Gradina Botanica",
         "event_date": "2026-06-21",
-        "event_type": "open_field",
+        "event_type": "tiered",
         "banner_url": "https://t4.ftcdn.net/jpg/06/00/62/77/360_F_600627754_uKAUfEHyXUdPHlZWldI47Z5TqZpGKhB7.jpg"
     }
 
@@ -111,4 +111,4 @@ def test_event_create_without_tickets(test_client: TestClient, db_session: Async
     # 422 comes from Pydantic's model_validator in CreateEventRequest
     # the request never reaches the use case
     assert response.status_code == 422
-    assert "Open field events require tiers" in str(data["detail"])
+    assert "Tiered events require tiers" in str(data["detail"])

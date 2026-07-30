@@ -1,9 +1,9 @@
 export enum EventType {
-  OPEN_FIELD = "open_field",
+  TIERED = "tiered",
   SEATED = "seated",
 }
 
-export type SearchEventType = "open_field" | "seated" | undefined;
+export type SearchEventType = "tiered" | "seated" | undefined;
 
 export interface EventSeat {
   id: string;

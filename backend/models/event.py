@@ -7,7 +7,7 @@ from models import EventTier, EventSeat
 
 
 class EventType(str, Enum):
-    OPEN_FIELD = "open_field"
+    TIERED = "tiered"
     SEATED = "seated"
 
 
@@ -21,7 +21,7 @@ class Event(BaseEntity):
     event_type: EventType
     banner_url: str
 
-    # Open field events use these
+    # Tiered events use these
     total_tickets: int | None = None
     available_tickets: int | None = None
 
@@ -58,8 +58,8 @@ class CreateEventRequest(BaseModel):
     def validate_event_type(self):
         if self.event_type == EventType.SEATED and not self.seats:
             raise ValueError("Seated events require seats")
-        if self.event_type == EventType.OPEN_FIELD and not self.tiers:
-            raise ValueError("Open field events require tiers")
+        if self.event_type == EventType.TIERED and not self.tiers:
+            raise ValueError("Tiered events require tiers")
         return self
 
 

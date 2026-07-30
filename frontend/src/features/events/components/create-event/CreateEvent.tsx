@@ -11,7 +11,7 @@ import { useCreateEventStore } from "../../stores/useCreateEventStore";
 import { useCreateEvent } from "../../hooks/useCreateEvent";
 import { EventTypeSwitch } from "./EventTypeSwitch";
 import { SeatedEditor } from "./seated/SeatedEditor";
-import { OpenFieldEditor } from "./open-field/OpenFieldEditor";
+import { TiersEditor } from "./tiered/TieredEditor";
 import { seatNumber } from "./utils";
 import { Input, Textarea, Label, Button, Card, CardContent, CardHeader, CardTitle } from "@/components/ui";
 
@@ -43,8 +43,8 @@ const buildRequestPayload = (
     return { ...base, seats, tiers: [] };
   }
 
-  // OPEN_FIELD
-  const tiers: EventTierInput[] = state.openFieldTiers.map((t) => ({
+  // TIERED
+  const tiers: EventTierInput[] = state.tiers.map((t) => ({
     name: t.name.trim(),
     price: t.price,
     total_tickets: t.totalTickets,
@@ -77,9 +77,9 @@ const validate = (
     if (unassigned > 0)
       return `${unassigned} seat(s) have no tier assigned. Assign a tier to all seats.`;
   } else {
-    // OPEN_FIELD
-    if (state.openFieldTiers.length < 1) return "Add at least one tier.";
-    for (const tier of state.openFieldTiers) {
+    // TIERED
+    if (state.tiers.length < 1) return "Add at least one tier.";
+    for (const tier of state.tiers) {
       if (!tier.name.trim()) return "All tiers must have a name.";
       if (tier.price <= 0)
         return `Tier "${tier.name || "unnamed"}" must have a price greater than 0.`;
@@ -211,7 +211,7 @@ export function CreateEvent() {
           {eventType === EventType.SEATED ? (
             <SeatedEditor />
           ) : (
-            <OpenFieldEditor />
+            <TiersEditor />
           )}
         </CardContent>
       </Card>

@@ -15,7 +15,7 @@ VALUES (
     'Cel mai tare festival al verii',
     'Gradina Botanica',
     '2027-08-21',
-    'open_field',
+    'tiered',
     'https://t4.ftcdn.net/jpg/06/00/62/77/360_F_600627754_uKAUfEHyXUdPHlZWldI47Z5TqZpGKhB7.jpg',
     10000,
     10000
@@ -48,7 +48,7 @@ VALUES (
     'Classical music',
     'Concert Hall',
     '2026-08-20',
-    'open_field',
+    'tiered',
     'https://t4.ftcdn.net/jpg/06/00/62/77/360_F_600627754_uKAUfEHyXUdPHlZWldI47Z5TqZpGKhB7.jpg',
     100,
     0

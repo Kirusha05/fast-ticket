@@ -18,7 +18,7 @@ def test_events_list_empty(test_client: TestClient, db_session: AsyncConnection)
 async def test_events_list_all(test_client: TestClient, db_session: AsyncConnection):
     """
     Setup:
-      - Summerfest, open_field, 10000 available
+      - Summerfest, tiered, 10000 available
       - Opera Night, seated, 1000 available
       - Rock Arena, seated, 500 available
     """
@@ -49,7 +49,7 @@ async def test_events_list_all(test_client: TestClient, db_session: AsyncConnect
     assert summerfest["name"] == "Summerfest"
     assert summerfest["description"] == "Cel mai tare festival al verii"
     assert summerfest["venue"] == "Gradina Botanica"
-    assert summerfest["event_type"] == "open_field"
+    assert summerfest["event_type"] == "tiered"
     assert summerfest["total_tickets"] == 10000
     assert summerfest["available_tickets"] == 10000
     assert summerfest["seats"] == []
@@ -78,18 +78,18 @@ async def test_events_list_all(test_client: TestClient, db_session: AsyncConnect
     assert rock["tiers"] == []
 
 
-async def test_events_list_filter_open_field(
+async def test_events_list_filter_tiered(
     test_client: TestClient, db_session: AsyncConnection
 ):
     """
-    Setup: all 3 events loaded (Summerfest open_field, Opera Night seated, Rock Arena seated).
-    GET /events?event_type=open_field -> only Summerfest returned.
+    Setup: all 3 events loaded (Summerfest tiered, Opera Night seated, Rock Arena seated).
+    GET /events?event_type=tiered -> only Summerfest returned.
     """
     with open('tests/data/event.sql') as f:
         await db_session.execute(f.read())
         await db_session.commit()
 
-    response = test_client.get("/events?event_type=open_field")
+    response = test_client.get("/events?event_type=tiered")
     data = response.json()
     print(json.dumps(data, indent=2))
 
@@ -100,12 +100,12 @@ async def test_events_list_filter_open_field(
     event_1 = data[0]
     assert event_1["id"] == "e-11111111-1111-1111-1111-111111111111"
     assert event_1["name"] == "Summerfest"
-    assert event_1["event_type"] == "open_field"
+    assert event_1["event_type"] == "tiered"
 
     event_2 = data[1]
     assert event_2["id"] == "e-44444444-4444-4444-4444-444444444444"
     assert event_2["name"] == "Classics never die"
-    assert event_2["event_type"] == "open_field"
+    assert event_2["event_type"] == "tiered"
 
 
 async def test_events_list_filter_seated(

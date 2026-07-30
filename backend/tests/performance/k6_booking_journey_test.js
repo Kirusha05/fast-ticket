@@ -27,7 +27,7 @@ const userAuth0Ids = [
 
 export default function () {
   const eventsRes = http.get(
-    "http://localhost:8000/events?event_type=open_field",
+    "http://localhost:8000/events?event_type=tiered",
   );
 
   const events = JSON.parse(eventsRes.body);

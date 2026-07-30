@@ -19,7 +19,7 @@ async def test_booking_create_checkout_session(
         - User 2 (u-22222222-...), "Second User"
 
       Events:
-        - Summerfest (e-11111111-...), open_field, 9997 available (was 10000, 3 taken)
+        - Summerfest (e-11111111-...), tiered, 9997 available (was 10000, 3 taken)
         - Opera Night (e-22222222-...), seated, 998 available (was 1000, 2 taken)
         - Rock Arena (e-33333333-...), seated, 500 total/available
 
@@ -91,7 +91,7 @@ async def test_booking_create_checkout_session_not_own_booking(
         - User 2 (u-22222222-...), "Second User"
 
       Events:
-        - Summerfest (e-11111111-...), open_field, 9997 available (was 10000, 3 taken)
+        - Summerfest (e-11111111-...), tiered, 9997 available (was 10000, 3 taken)
         - Opera Night (e-22222222-...), seated, 998 available (was 1000, 2 taken)
         - Rock Arena (e-33333333-...), seated, 500 total/available
 
@@ -160,7 +160,7 @@ async def test_booking_create_checkout_session_booking_not_pending(
         - User 2 (u-22222222-...), "Second User"
 
       Events:
-        - Summerfest (e-11111111-...), open_field, 9997 available (was 10000, 3 taken)
+        - Summerfest (e-11111111-...), tiered, 9997 available (was 10000, 3 taken)
         - Opera Night (e-22222222-...), seated, 998 available (was 1000, 2 taken)
         - Rock Arena (e-33333333-...), seated, 500 total/available
 
@@ -228,7 +228,7 @@ async def test_booking_create_checkout_session_booking_just_expired(
         - User 2 (u-22222222-...), "Second User"
 
       Events:
-        - Summerfest (e-11111111-...), open_field, 9997 available (was 10000, 3 taken)
+        - Summerfest (e-11111111-...), tiered, 9997 available (was 10000, 3 taken)
         - Opera Night (e-22222222-...), seated, 998 available (was 1000, 2 taken)
         - Rock Arena (e-33333333-...), seated, 500 total/available
 

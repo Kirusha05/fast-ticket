@@ -13,7 +13,7 @@ async def test_booking_cancel_seated_status_pending(
         - User 2 (u-22222222-...), "Second User"
 
       Events:
-        - Summerfest (e-11111111-...), open_field, 10000 total/available
+        - Summerfest (e-11111111-...), tiered, 10000 total/available
         - Opera Night (e-22222222-...), seated, 1000 available (took 2 -> 998)
         - Rock Arena (e-33333333-...), seated, 500 total/available
 
@@ -87,7 +87,7 @@ async def test_booking_cancel_seated_status_pending(
     assert row['available_tickets'] == 1000  # were 998 before, 2 tickets got cancelled
 
 
-async def test_booking_cancel_open_field_status_pending(
+async def test_booking_cancel_tiered_status_pending(
     test_client: TestClient, db_session: AsyncConnection, override_current_user_dummy
 ):
     """
@@ -97,7 +97,7 @@ async def test_booking_cancel_open_field_status_pending(
         - User 2 (u-22222222-...), "Second User"
 
       Events:
-        - Summerfest (e-11111111-...), open_field, 9997 available (was 10000, 3 taken)
+        - Summerfest (e-11111111-...), tiered, 9997 available (was 10000, 3 taken)
         - Opera Night (e-22222222-...), seated, 998 available (was 1000, 2 taken)
         - Rock Arena (e-33333333-...), seated, 500 total/available
 
@@ -110,7 +110,7 @@ async def test_booking_cancel_open_field_status_pending(
         #3 (b-10000000-...-003): User 2, Summerfest, 1x General @ $50
 
     Logged in as User 1.
-    Cancel booking #1 (open-field - 2 General tickets on Summerfest).
+    Cancel booking #1 (tiered - 2 General tickets on Summerfest).
     """
     with open('tests/data/user.sql') as f:
         await db_session.execute(f.read())
@@ -126,7 +126,7 @@ async def test_booking_cancel_open_field_status_pending(
 
     override_current_user_dummy()  # bypass authorization, logged in as user 1
 
-    # cancel user 1's open-field booking
+    # cancel user 1's tiered booking
     booking_id = "b-10000000-0000-0000-0000-000000000001"
 
     response = test_client.post(f"/bookings/{booking_id}/cancel")
@@ -162,7 +162,7 @@ async def test_booking_cancel_open_field_status_pending(
     assert row["count"] == 0
 
 
-async def test_booking_cancel_open_field_not_own(
+async def test_booking_cancel_tiered_not_own(
     test_client: TestClient, db_session: AsyncConnection, override_current_user_dummy
 ):
     """
@@ -172,7 +172,7 @@ async def test_booking_cancel_open_field_not_own(
         - User 2 (u-22222222-...), "Second User"
 
       Events:
-        - Summerfest (e-11111111-...), open_field, 9997 available (was 10000, 3 taken)
+        - Summerfest (e-11111111-...), tiered, 9997 available (was 10000, 3 taken)
         - Opera Night (e-22222222-...), seated, 998 available (was 1000, 2 taken)
         - Rock Arena (e-33333333-...), seated, 500 total/available
 
@@ -201,7 +201,7 @@ async def test_booking_cancel_open_field_not_own(
 
     override_current_user_dummy()  # bypass authorization, logged in as user 1
 
-    # try to cancel user 2's open-field booking
+    # try to cancel user 2's tiered booking
     booking_id = "b-10000000-0000-0000-0000-000000000003"
 
     response = test_client.post(f"/bookings/{booking_id}/cancel")
@@ -222,7 +222,7 @@ async def test_booking_cancel_twice(
         - User 2 (u-22222222-...), "Second User"
 
       Events:
-        - Summerfest (e-11111111-...), open_field, 9997 available (was 10000, 3 taken)
+        - Summerfest (e-11111111-...), tiered, 9997 available (was 10000, 3 taken)
         - Opera Night (e-22222222-...), seated, 998 available (was 1000, 2 taken)
         - Rock Arena (e-33333333-...), seated, 500 total/available
 
@@ -251,7 +251,7 @@ async def test_booking_cancel_twice(
 
     override_current_user_dummy()  # bypass authorization, logged in as user 1
 
-    # cancel user 1's open-field booking
+    # cancel user 1's tiered booking
     booking_id = "b-10000000-0000-0000-0000-000000000001"
 
     response = test_client.post(f"/bookings/{booking_id}/cancel")
@@ -281,7 +281,7 @@ async def test_booking_cancel_confirmed(
         - User 2 (u-22222222-...), "Second User"
 
       Events:
-        - Summerfest (e-11111111-...), open_field, 10000 total/available
+        - Summerfest (e-11111111-...), tiered, 10000 total/available
         - Opera Night (e-22222222-...), seated, 1000 available (took 2 -> 998)
         - Rock Arena (e-33333333-...), seated, 500 total/available
 

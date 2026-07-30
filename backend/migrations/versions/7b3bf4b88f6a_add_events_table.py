@@ -19,7 +19,7 @@ depends_on: Union[str, Sequence[str], None] = None
 
 
 def upgrade() -> None:
-    event_type_enum = sa.Enum('open_field', 'seated', name='event_type')
+    event_type_enum = sa.Enum('tiered', 'seated', name='event_type')
     
     op.create_table(
         'events',

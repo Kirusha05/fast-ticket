@@ -5,23 +5,29 @@ import { useGetEvents } from "@/features/events/hooks/useGetEvents";
 import { EventCard } from "./EventCard";
 import { Skeleton } from "@/components/ui/skeleton";
 import { Button } from "@/components/ui";
-import { Loader2, Plus, Ticket } from "lucide-react";
+import { Layers, Loader2, Plus, Ticket } from "lucide-react";
 import { useIsAdmin } from "@/features/common/auth/hooks/useIsAdmin";
 
 export const eventsSearchSchema = z.object({
-  event_type: z.enum(["open_field", "seated"]).optional().catch(undefined),
+  event_type: z.enum(["tiered", "seated"]).optional().catch(undefined),
 });
 
 const FILTERS = [
   { label: "All", value: undefined },
   { label: "Seated", value: "seated" as const },
-  { label: "Open Field", value: "open_field" as const },
+  { label: "Tiered", value: "tiered" as const },
 ] as const;
 
 export function EventsPage() {
   const navigate = useNavigate();
   const { event_type } = Route.useSearch();
-  const { data: events, isPending, isFetching, isError, error } = useGetEvents(event_type);
+  const {
+    data: events,
+    isPending,
+    isFetching,
+    isError,
+    error,
+  } = useGetEvents(event_type);
   const isAdmin = useIsAdmin();
 
   return (
@@ -29,10 +35,15 @@ export function EventsPage() {
       {/* Header */}
       <div className="flex items-center justify-between">
         <h1 className="text-2xl font-bold">Events</h1>
-        {isAdmin && <Button className="cursor-pointer" onClick={() => navigate({ to: "/events/create" })}>
-          <Plus className="h-4 w-4" />
-          New
-        </Button>}
+        {isAdmin && (
+          <Button
+            className="cursor-pointer"
+            onClick={() => navigate({ to: "/events/create" })}
+          >
+            <Plus className="h-4 w-4" />
+            New
+          </Button>
+        )}
       </div>
 
       {/* Filter tabs */}
@@ -62,7 +73,10 @@ export function EventsPage() {
       {isPending && (
         <div className="grid grid-cols-1 gap-5 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4">
           {Array.from({ length: 7 }).map((_, i) => (
-            <div key={i} className="overflow-hidden rounded-xl ring-1 ring-foreground/10">
+            <div
+              key={i}
+              className="overflow-hidden rounded-xl ring-1 ring-foreground/10"
+            >
               <Skeleton className="aspect-[16/9] w-full rounded-none" />
               <div className="space-y-3 p-4">
                 <Skeleton className="h-5 w-3/4" />
@@ -76,10 +90,25 @@ export function EventsPage() {
 
       {isError && <div>An error has occured: {error.message}</div>}
 
-      {events && !events.length && <p>No events...</p>}
+      {events && !events.length && (
+        <p>
+          <div className="flex flex-col items-center justify-center py-12 text-center">
+            <div className="mb-4 rounded-full bg-muted p-3">
+              <Layers className="h-8 w-8 text-muted-foreground" />
+            </div>
+
+            <p className="font-medium">No events found</p>
+
+            <p className="mt-1 text-sm text-muted-foreground">
+              There are no events corresponding to your search
+            </p>
+          </div>
+        </p>
+      )}
+
       {events && events.length > 0 && (
         <div className="grid grid-cols-1 gap-5 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4">
-          {events.map((event) => (
+          {events.sort((a, b) => a.event_date.localeCompare(b.event_date)).map((event) => (
             <EventCard key={event.id} event={event} />
           ))}
         </div>

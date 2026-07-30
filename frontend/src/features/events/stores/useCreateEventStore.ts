@@ -9,7 +9,7 @@ export type SeatedTier = {
   price: number;
 };
 
-export type OpenFieldTier = {
+export type EventTier = {
   id: string;
   name: string;
   price: number;
@@ -54,8 +54,8 @@ type CreateEventState = {
   selectedTierId: string | null;
   seatAssignments: (string | null)[][];
 
-  // open field
-  openFieldTiers: OpenFieldTier[];
+  // tiered
+  tiers: EventTier[];
 
   // actions
   setName: (v: string) => void;
@@ -77,9 +77,9 @@ type CreateEventState = {
   assignSeat: (row: number, col: number) => void;
   clearSeat: (row: number, col: number) => void;
 
-  addOpenFieldTier: () => void;
-  updateOpenFieldTier: (id: string, patch: Partial<Pick<OpenFieldTier, "name" | "price" | "totalTickets">>) => void;
-  removeOpenFieldTier: (id: string) => void;
+  addTier: () => void;
+  updateTier: (id: string, patch: Partial<Pick<EventTier, "name" | "price" | "totalTickets">>) => void;
+  removeTier: (id: string) => void;
 
   reset: () => void;
 };
@@ -101,7 +101,7 @@ const initialState = {
   seatedTiers: [] as SeatedTier[],
   selectedTierId: null as string | null,
   seatAssignments: [] as (string | null)[][],
-  openFieldTiers: [] as OpenFieldTier[],
+  tiers: [] as EventTier[],
 };
 
 export const useCreateEventStore = create<CreateEventState>((set, get) => ({
@@ -175,26 +175,26 @@ export const useCreateEventStore = create<CreateEventState>((set, get) => ({
     set({ seatAssignments: updated });
   },
 
-  addOpenFieldTier: () => {
-    const { openFieldTiers } = get();
-    const tier: OpenFieldTier = {
+  addTier: () => {
+    const { tiers } = get();
+    const tier: EventTier = {
       id: crypto.randomUUID(),
-      name: `Tier ${openFieldTiers.length + 1}`,
+      name: `Tier ${tiers.length + 1}`,
       price: 0,
       totalTickets: 0,
     };
-    set({ openFieldTiers: [...openFieldTiers, tier] });
+    set({ tiers: [...tiers, tier] });
   },
-  updateOpenFieldTier: (id, patch) => {
+  updateTier: (id, patch) => {
     set((s) => ({
-      openFieldTiers: s.openFieldTiers.map((t) =>
+      tiers: s.tiers.map((t) =>
         t.id === id ? { ...t, ...patch } : t,
       ),
     }));
   },
-  removeOpenFieldTier: (id) => {
+  removeTier: (id) => {
     set((s) => ({
-      openFieldTiers: s.openFieldTiers.filter((t) => t.id !== id),
+      tiers: s.tiers.filter((t) => t.id !== id),
     }));
   },
 

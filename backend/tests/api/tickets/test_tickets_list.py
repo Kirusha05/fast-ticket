@@ -3,7 +3,7 @@ from psycopg import AsyncConnection
 import json
 
 
-async def test_tickets_list_open_field(test_client: TestClient, db_session: AsyncConnection, override_current_user_dummy):
+async def test_tickets_list_tiered(test_client: TestClient, db_session: AsyncConnection, override_current_user_dummy):
     """
     Setup:
       Users:
@@ -11,7 +11,7 @@ async def test_tickets_list_open_field(test_client: TestClient, db_session: Asyn
         - User 2 (u-22222222-...), "Second User"
 
       Events:
-        - Summerfest (e-11111111-...), open_field, 9997 available (was 10000, 3 taken)
+        - Summerfest (e-11111111-...), tiered, 9997 available (was 10000, 3 taken)
         - Opera Night (e-22222222-...), seated, 998 available (was 1000, 2 taken)
         - Rock Arena (e-33333333-...), seated, 500 total/available
 
@@ -42,7 +42,7 @@ async def test_tickets_list_open_field(test_client: TestClient, db_session: Asyn
 
     override_current_user_dummy()  # bypass authorization, logged in as user 1
 
-    booking_id = "b-10000000-0000-0000-0000-000000000001"  # open-field / tiered
+    booking_id = "b-10000000-0000-0000-0000-000000000001"  # tiered / tiered
 
     response = test_client.get(f"/tickets/{booking_id}")
     data = response.json()
@@ -62,7 +62,7 @@ async def test_tickets_list_seated(test_client: TestClient, db_session: AsyncCon
         - User 2 (u-22222222-...), "Second User"
 
       Events:
-        - Summerfest (e-11111111-...), open_field, 9997 available (was 10000, 3 taken)
+        - Summerfest (e-11111111-...), tiered, 9997 available (was 10000, 3 taken)
         - Opera Night (e-22222222-...), seated, 998 available (was 1000, 2 taken)
         - Rock Arena (e-33333333-...), seated, 500 total/available
 

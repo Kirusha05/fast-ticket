@@ -1,31 +1,31 @@
 import { useCreateEventStore } from "../../../stores/useCreateEventStore";
 import { Input, Label, Button } from "@/components/ui";
 
-export function OpenFieldEditor() {
-  const openFieldTiers = useCreateEventStore((s) => s.openFieldTiers);
-  const addOpenFieldTier = useCreateEventStore((s) => s.addOpenFieldTier);
-  const updateOpenFieldTier = useCreateEventStore((s) => s.updateOpenFieldTier);
-  const removeOpenFieldTier = useCreateEventStore((s) => s.removeOpenFieldTier);
+export function TiersEditor() {
+  const tiers = useCreateEventStore((s) => s.tiers);
+  const addTier = useCreateEventStore((s) => s.addTier);
+  const updateTier = useCreateEventStore((s) => s.updateTier);
+  const removeTier = useCreateEventStore((s) => s.removeTier);
 
-  const totalTickets = openFieldTiers.reduce((sum, t) => sum + (t.totalTickets || 0), 0);
+  const totalTickets = tiers.reduce((sum, t) => sum + (t.totalTickets || 0), 0);
 
   return (
     <div className="space-y-4">
       <div className="flex items-center justify-between">
         <p className="text-sm">Edit the available ticket tiers for this event.</p>
-        <Button type="button" variant="outline" size="sm" onClick={addOpenFieldTier}>
+        <Button type="button" variant="outline" size="sm" onClick={addTier}>
           + Add tier
         </Button>
       </div>
 
-      {openFieldTiers.length === 0 && (
+      {tiers.length === 0 && (
         <p className="text-sm text-muted-foreground">
           No tiers yet. Add at least one tier with a name, price, and ticket quantity.
         </p>
       )}
 
       <div className="space-y-3">
-        {openFieldTiers.map((tier) => (
+        {tiers.map((tier) => (
           <div
             key={tier.id}
             className="flex items-end gap-3 rounded-md border border-border p-3"
@@ -39,7 +39,7 @@ export function OpenFieldEditor() {
                 type="text"
                 value={tier.name}
                 onChange={(e) =>
-                  updateOpenFieldTier(tier.id, { name: e.target.value })
+                  updateTier(tier.id, { name: e.target.value })
                 }
                 placeholder="e.g. General Admission"
               />
@@ -53,7 +53,7 @@ export function OpenFieldEditor() {
                 type="number"
                 value={tier.price || ""}
                 onChange={(e) =>
-                  updateOpenFieldTier(tier.id, {
+                  updateTier(tier.id, {
                     price: parseFloat(e.target.value) || 0,
                   })
                 }
@@ -71,7 +71,7 @@ export function OpenFieldEditor() {
                 type="number"
                 value={tier.totalTickets || ""}
                 onChange={(e) =>
-                  updateOpenFieldTier(tier.id, {
+                  updateTier(tier.id, {
                     totalTickets: parseInt(e.target.value) || 0,
                   })
                 }
@@ -82,7 +82,7 @@ export function OpenFieldEditor() {
             </div>
             <button
               type="button"
-              onClick={() => removeOpenFieldTier(tier.id)}
+              onClick={() => removeTier(tier.id)}
               className="mb-0.5 text-muted-foreground hover:text-destructive shrink-0"
               title="Remove tier"
             >

@@ -7,7 +7,7 @@ import pytest
 
 @pytest.mark.asyncio
 @patch("routes.webhooks.stripe")
-async def test_stripe_booking_completed_webhook_open_field(
+async def test_stripe_booking_completed_webhook_tiered(
     mock_stripe, test_client: TestClient, db_session: AsyncConnection, override_current_user_dummy
 ):
     """
@@ -17,7 +17,7 @@ async def test_stripe_booking_completed_webhook_open_field(
         - User 2 (u-22222222-...), "Second User"
 
       Events:
-        - Summerfest (e-11111111-...), open_field, 9997 available (was 10000, 3 taken)
+        - Summerfest (e-11111111-...), tiered, 9997 available (was 10000, 3 taken)
         - Opera Night (e-22222222-...), seated, 998 available (was 1000, 2 taken)
         - Rock Arena (e-33333333-...), seated, 500 total/available
 
@@ -41,7 +41,7 @@ async def test_stripe_booking_completed_webhook_open_field(
 
     override_current_user_dummy()  # bypass authorization, logged in as user 1
 
-    # user 1's open-field booking (2x General)
+    # user 1's tiered booking (2x General)
     booking_id = "b-10000000-0000-0000-0000-000000000001"
     stripe_checkout_session_id = "cs_test_10000000000000000000000001"
     stripe_payment_intent_id = "pi_test_10000000000000000000000001"
@@ -109,7 +109,7 @@ async def test_stripe_booking_completed_webhook_seated(
         - User 2 (u-22222222-...), "Second User"
 
       Events:
-        - Summerfest (e-11111111-...), open_field, 9997 available (was 10000, 3 taken)
+        - Summerfest (e-11111111-...), tiered, 9997 available (was 10000, 3 taken)
         - Opera Night (e-22222222-...), seated, 998 available (was 1000, 2 taken)
         - Rock Arena (e-33333333-...), seated, 500 total/available
 
@@ -201,7 +201,7 @@ async def test_stripe_booking_expired_webhook(
         - User 2 (u-22222222-...), "Second User"
 
       Events:
-        - Summerfest (e-11111111-...), open_field, 9997 available (was 10000, 3 taken)
+        - Summerfest (e-11111111-...), tiered, 9997 available (was 10000, 3 taken)
         - Opera Night (e-22222222-...), seated, 998 available (was 1000, 2 taken)
         - Rock Arena (e-33333333-...), seated, 500 total/available
 

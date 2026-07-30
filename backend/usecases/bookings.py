@@ -61,10 +61,10 @@ class BookingsUseCase:
                 raise HTTPException(status_code=400, detail="Seated events require seat_ids")
             created_booking = await self._create_seated_booking(user.id, event, booking_request)
 
-        elif event.event_type == EventType.OPEN_FIELD:
+        elif event.event_type == EventType.TIERED:
             if not booking_request.tiered_tickets:
-                raise HTTPException(status_code=400, detail="Open field events require tiered_tickets")
-            created_booking = await self._create_open_field_booking(user.id, event, booking_request)
+                raise HTTPException(status_code=400, detail="Tiered events require tiered_tickets")
+            created_booking = await self._create_tiered_booking(user.id, event, booking_request)
 
         else:
             raise HTTPException(status_code=400, detail=f"Unknown event type: {event.event_type}")
@@ -123,7 +123,7 @@ class BookingsUseCase:
         enriched = await self._enrich_bookings([created_booking])
         return enriched[0]
 
-    async def _create_open_field_booking(
+    async def _create_tiered_booking(
         self, user_id: EntityId, event: Event, booking_request: CreateBookingRequest
     ) -> BookingResponse:
         tier_entries = []
@@ -427,7 +427,7 @@ class BookingsUseCase:
                 await self._booking_seated_tickets_repository.delete_by_booking_id(booking.id)
                 await self._events_repository.increment_available_tickets(event.id, booking.ticket_count)
 
-        elif event.event_type == EventType.OPEN_FIELD:
+        elif event.event_type == EventType.TIERED:
             tiered_tickets = await self._booking_tiered_tickets_repository.get_tiered_tickets_by_booking_ids([booking.id])
 
             tier_counts = Counter(tt.tier_id.value for tt in tiered_tickets)

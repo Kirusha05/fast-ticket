@@ -23,7 +23,7 @@ export function EventCard({ event }: IProps) {
     year: "numeric",
   }).format(new Date(event.event_date));
 
-  const eventTypeLabel = event.event_type === "seated" ? "Seated" : "Open Field";
+  const eventTypeLabel = event.event_type === "seated" ? "Seated" : "Tiered";
 
   return (
     <Card
