@@ -181,14 +181,14 @@ export const ValidateTicketsPage = () => {
   const ResultIcon = resultStyle?.icon;
 
   return (
-    <div className="mx-auto flex w-full max-w-3xl flex-col gap-6 px-4">
+    <div className="mx-auto flex w-full max-w-3xl flex-col gap-6">
       <div className="flex items-center justify-between">
         <div>
           <h1 className="text-2xl font-semibold tracking-tight">
             Validate tickets
           </h1>
           <p className="text-sm text-muted-foreground">
-            Scan a QR code or enter a ticket ID manually
+            Scan QR code or enter ticket ID
           </p>
         </div>
         <Badge

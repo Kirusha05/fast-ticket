@@ -39,7 +39,7 @@ export function SuccessPage() {
   const isPending = booking.status === "pending";
 
   return (
-    <div className="min-h-[80vh] flex items-center justify-center p-4">
+    <div className="min-h-[80vh] flex items-center justify-center">
       <Card className="w-full max-w-lg overflow-hidden shadow-lg">
         {/* Event Banner */}
         {isLoading ? (
@@ -71,9 +71,9 @@ export function SuccessPage() {
           {isLoading ? (
             <Skeleton className="h-8 w-3/4 mx-auto" />
           ) : isPending ? (
-            <CardTitle className="text-2xl">Processing payment...</CardTitle>
+            <CardTitle className="text-xl md:text-2xl">Processing payment...</CardTitle>
           ) : (
-            <CardTitle className="text-2xl text-green-600">
+            <CardTitle className="text-xl md:text-2xl text-green-600">
               Booking Confirmed!
             </CardTitle>
           )}
@@ -127,11 +127,7 @@ export function SuccessPage() {
               <Separator />
 
               {/* Order Summary */}
-              <div className="space-y-2">
-                <div className="flex items-center justify-between text-sm">
-                  <span className="text-muted-foreground">Booking ID</span>
-                  <span className="font-mono font-medium">{booking.id}</span>
-                </div>
+              <div className="space-y-2 mb-2">
                 <div className="flex items-center justify-between text-sm">
                   <span className="text-muted-foreground">Items</span>
                   <span className="font-medium">{ticketSummary(booking)}</span>

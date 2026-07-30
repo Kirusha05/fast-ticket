@@ -1,8 +1,8 @@
 import { Route } from "@/routes/tickets_.$bookingId";
 import { useGetTickets } from "../../hooks/useGetTickets";
 import { useGetBooking } from "@/features/bookings/hooks/useGetBooking";
-import { Skeleton } from "@/components/ui";
 import { TicketCard } from "./TicketCard";
+import { TicketCardSkeleton } from "./TicketCardSkeleton";
 import { Layers } from "lucide-react";
 
 export const TicketsPage = () => {
@@ -18,13 +18,6 @@ export const TicketsPage = () => {
     error: errorBooking,
   } = useGetBooking(bookingId);
 
-  if (isPendingBooking || isPendingTickets) {
-    return <p>Loading...</p>;
-  }
-
-  console.log("Booking:", booking);
-  console.log("Tickets:", tickets);
-
   return (
     <div className="space-y-6 container mx-auto">
       {/* Header */}
@@ -35,18 +28,16 @@ export const TicketsPage = () => {
       {/* Loading skeletons */}
       {(isPendingBooking || isPendingTickets) && (
         <div className="space-y-4">
-          <Skeleton className="aspect-[4/3] h-60 shrink-0 rounded-lg" />
-          <Skeleton className="aspect-[4/3] h-60 shrink-0 rounded-lg" />
+          <TicketCardSkeleton />
+          <TicketCardSkeleton />
         </div>
       )}
 
-      {!errorBooking ||
-        (errorTickets && (
-          <p>
-            An error has occured:{" "}
-            {errorBooking?.message || errorTickets?.message}
-          </p>
-        ))}
+      {(errorBooking || errorTickets) && (
+        <p>
+          An error has occured: {errorBooking?.message || errorTickets?.message}
+        </p>
+      )}
 
       {booking && tickets && !tickets.length && (
         <div className="flex flex-col items-center justify-center py-12 text-center">

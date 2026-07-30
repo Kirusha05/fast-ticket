@@ -115,8 +115,3 @@ class Config(BaseSettings):
 
 config = Config()
 print(f"Config.MODE = {config.MODE}")
-# print("-" * 36)
-# print("Loaded config: ", config.model_dump_json(indent=2))
-# print("-" * 36)
-
-stripe.api_key = config.STRIPE.SECRET_KEY

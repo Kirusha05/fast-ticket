@@ -95,20 +95,19 @@ export const TicketCard = ({ event, ticket }: IProps) => {
 
         <Separator orientation="horizontal" className="my-4" />
 
-        <div className="flex items-center gap-2">
+        <div className="flex items-center gap-1">
           <Badge
-            className="uppercase"
+            className={`capitalize mr-1 ${ticket.status == TicketStatus.USED ? "bg-green-500" : ""}`}
             variant={
-              ticket.status == TicketStatus.USED ? "destructive" : "secondary"
+              ticket.status == TicketStatus.USED ? "default" : "secondary"
             }
           >
-            {ticket.status}
+            {ticket.status == TicketStatus.UNUSED ? ticket.status : "validated"}
           </Badge>
           {ticket.status == TicketStatus.USED && (
             <>
-              <Separator orientation="vertical" />
               <p className="inline-flex items-center gap-1 text-muted-foreground">
-                <span className="mr-1">checked in at</span>
+                <span>on</span>
                 <CalendarDays className="h-3.5 w-3.5 shrink-0" />
                 {dateFormat.format(new Date(ticket.checked_in_at!))}
               </p>

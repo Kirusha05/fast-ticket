@@ -22,7 +22,8 @@ app.add_middleware(
     CORSMiddleware,
     allow_origins=[
         "http://localhost:5173", 
-        # "https://63ff-2a00-1858-104d-8e7b-652b-98a7-351f-e4bb.ngrok-free.app"
+        "https://fast-ticket-frontend-1068537215625.europe-west1.run.app",
+        "https://app.kreelox.com"
     ],  # Avoid wildcard * in prod
     allow_credentials=False,
     allow_methods=["*"],  # Open only necessary methods
