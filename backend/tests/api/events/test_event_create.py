@@ -15,7 +15,7 @@ def test_event_create_with_tickets(test_client: TestClient, db_session: AsyncCon
         "name": "Summerfest",
         "description": "Cel mai tare festival al verii",
         "venue": "Gradina Botanica",
-        "event_date": "2026-06-21",
+        "event_date": "2030-06-21T17:45:00Z",
         "event_type": "tiered",
         "banner_url": "https://t4.ftcdn.net/jpg/06/00/62/77/360_F_600627754_uKAUfEHyXUdPHlZWldI47Z5TqZpGKhB7.jpg",
         "tiers": [
@@ -41,6 +41,34 @@ def test_event_create_with_tickets(test_client: TestClient, db_session: AsyncCon
     assert data["updated_at"] is not None
 
 
+def test_event_create_event_date_in_the_past(test_client: TestClient, db_session: AsyncConnection, override_current_user_admin):
+    """
+    Setup: empty database.
+    POST a new tiered event Summerfest with 1 tier (General, $50, 10000 tickets).
+    Event created with total_tickets=10000, available_tickets=10000.
+    """
+    override_current_user_admin()  # bypass authorization
+
+    request = {
+        "name": "Summerfest",
+        "description": "Cel mai tare festival al verii",
+        "venue": "Gradina Botanica",
+        "event_date": "2025-06-21T17:45:00Z",
+        "event_type": "tiered",
+        "banner_url": "https://t4.ftcdn.net/jpg/06/00/62/77/360_F_600627754_uKAUfEHyXUdPHlZWldI47Z5TqZpGKhB7.jpg",
+        "tiers": [
+            {"name": "General", "price": 50.0, "total_tickets": 10000}
+        ]
+    }
+
+    response = test_client.post("/events", json=request)
+    data = response.json()
+    print(json.dumps(data, indent=2))
+
+    assert response.status_code == 409
+    assert data["detail"] == "Event date must be in the future"
+
+
 async def test_event_create_with_seats(test_client: TestClient, db_session: AsyncConnection, override_current_user_admin):
     """
     Setup: empty database.
@@ -54,7 +82,7 @@ async def test_event_create_with_seats(test_client: TestClient, db_session: Asyn
         "name": "Opera Night",
         "description": "O seara de opera clasica",
         "venue": "Ateneul Roman",
-        "event_date": "2026-06-21",
+        "event_date": "2030-06-21T17:45:00Z",
         "event_type": "seated",
         "banner_url": "https://t4.ftcdn.net/jpg/06/00/62/77/360_F_600627754_uKAUfEHyXUdPHlZWldI47Z5TqZpGKhB7.jpg",
         "seats": [
@@ -100,7 +128,7 @@ def test_event_create_without_tickets(test_client: TestClient, db_session: Async
         "name": "Summerfest",
         "description": "Cel mai tare festival al verii",
         "venue": "Gradina Botanica",
-        "event_date": "2026-06-21",
+        "event_date": "2030-06-21T17:45:00Z",
         "event_type": "tiered",
         "banner_url": "https://t4.ftcdn.net/jpg/06/00/62/77/360_F_600627754_uKAUfEHyXUdPHlZWldI47Z5TqZpGKhB7.jpg"
     }
