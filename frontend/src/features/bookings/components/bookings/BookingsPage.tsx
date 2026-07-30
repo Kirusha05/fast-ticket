@@ -1,7 +1,7 @@
 import { useGetBookings } from "@/features/bookings/hooks/useGetBookings";
 import { BookingCard } from "./BookingCard";
 import { Skeleton } from "@/components/ui/skeleton";
-import { Loader2 } from "lucide-react";
+import { Layers, Loader2 } from "lucide-react";
 
 export function BookingsPage() {
   const {
@@ -47,13 +47,27 @@ export function BookingsPage() {
 
       {isError && <div>An error has occured: {error.message}</div>}
 
-      {bookings && !bookings.length && <p>No bookings yet.</p>}
+      {bookings && !bookings.length && (
+        <div className="flex flex-col items-center justify-center py-12 text-center">
+          <div className="mb-4 rounded-full bg-muted p-3">
+            <Layers className="h-8 w-8 text-muted-foreground" />
+          </div>
+
+          <p className="font-medium">No bookings found</p>
+
+          <p className="mt-1 text-sm text-muted-foreground">
+            You haven't made any bookings yet.
+          </p>
+        </div>
+      )}
 
       {bookings && bookings.length > 0 && (
         <div className="space-y-4">
-          {bookings.sort((a, b) => b.created_at.localeCompare(a.created_at)).map((booking) => (
-            <BookingCard key={booking.id} booking={booking} />
-          ))}
+          {bookings
+            .sort((a, b) => b.created_at.localeCompare(a.created_at))
+            .map((booking) => (
+              <BookingCard key={booking.id} booking={booking} />
+            ))}
         </div>
       )}
 

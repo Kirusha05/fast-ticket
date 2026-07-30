@@ -2,6 +2,7 @@ from fastapi import HTTPException
 from psycopg import AsyncConnection
 from repositories import EventsRepository, EventSeatsRepository, EventTiersRepository
 from models import EntityId, User, UserRole, Event, EventSeat, EventTier, CreateEventRequest, UpdateEventRequest, EventType
+from datetime import datetime, timedelta, timezone
 
 
 class EventsUseCase:
@@ -21,6 +22,9 @@ class EventsUseCase:
             total_tickets = sum(t.total_tickets for t in event_request.tiers)
         else:
             raise HTTPException(status_code=400, detail=f"Unknown event type: {event_request.event_type}")
+
+        if event_request.event_date <= datetime.now(timezone.utc):
+            raise HTTPException(status_code=409, detail="Event date must be in the future")
 
         new_event = Event(
             id=Event.generate_entity_id(),

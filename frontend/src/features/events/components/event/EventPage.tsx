@@ -138,9 +138,7 @@ export function EventPage() {
       {/* Two-column layout */}
       <div className="grid grid-cols-1 gap-8 lg:grid-cols-8">
         {/* Left column, event details */}
-        <div className={
-          cn("space-y-4", eventAlreadyStarted ? "lg:col-span-8" : "lg:col-span-6")}
-        >
+        <div className="space-y-4 lg:col-span-6">
           {/* Event name */}
           <h1 className="text-3xl font-bold tracking-tight">{event.name}</h1>
           {/* Description */}
@@ -174,66 +172,95 @@ export function EventPage() {
         </div>
 
         {/* Right column, ticket CTA card */}
-        {!eventAlreadyStarted && (
-          <div className="lg:col-span-2">
-            <Card className="sticky top-6">
-              <CardHeader>
-                <div className="flex items-center justify-start gap-0.5">
-                  <Ticket className="h-5 w-5 text-muted-foreground mr-2" />
-                  <CardTitle>Tickets</CardTitle>
-                </div>
-              </CardHeader>
+        <div className="lg:col-span-2">
+          <Card className="sticky top-6">
+            <CardHeader>
+              <div className="flex items-center justify-start gap-0.5">
+                <Ticket className="h-5 w-5 text-muted-foreground mr-2" />
+                <CardTitle>Tickets</CardTitle>
+              </div>
+            </CardHeader>
 
-              <Separator />
+            <Separator />
 
-              <CardContent className="space-y-4 pt-4">
-                {/* Available count */}
-                <div className="text-center">
-                  <span className="text-4xl font-bold tracking-tight">
-                    {event.available_tickets}
-                  </span>
-                  <p className="text-sm text-muted-foreground">
-                    {ticketNoun} left
-                  </p>
-                </div>
-
-                {/* Starting price */}
-                {lowestPrice !== null && (
-                  <p className="text-center text-sm text-muted-foreground">
-                    Tickets starting from{" "}
-                    <span className="font-semibold text-foreground">
-                      ${lowestPrice.toFixed(2)}
+            {!eventAlreadyStarted && (
+              <>
+                <CardContent className="space-y-4 py-4">
+                  {/* Available count */}
+                  <div className="text-center">
+                    <span className="text-4xl font-bold tracking-tight">
+                      {event.available_tickets}
                     </span>
-                  </p>
-                )}
-              </CardContent>
+                    <p className="text-sm text-muted-foreground">
+                      {ticketNoun} left
+                    </p>
+                  </div>
 
-              <CardFooter>
-                {event.available_tickets > 0 ? (
-                  isAuthenticated ? (
-                    <Button className="w-full cursor-pointer" size="lg" asChild>
-                      <Link to="/bookings/new" search={{ event_id: event.id }}>
-                        Get Tickets
-                      </Link>
-                    </Button>
+                  {/* Starting price */}
+                  {lowestPrice !== null && (
+                    <p className="text-center text-sm text-muted-foreground">
+                      Tickets starting from{" "}
+                      <span className="font-semibold text-foreground">
+                        ${lowestPrice.toFixed(2)}
+                      </span>
+                    </p>
+                  )}
+                </CardContent>
+
+                <CardFooter>
+                  {event.available_tickets > 0 ? (
+                    isAuthenticated ? (
+                      <Button
+                        className="w-full cursor-pointer"
+                        size="lg"
+                        asChild
+                      >
+                        <Link
+                          to="/bookings/new"
+                          search={{ event_id: event.id }}
+                        >
+                          Get Tickets
+                        </Link>
+                      </Button>
+                    ) : (
+                      <Button
+                        className="w-full cursor-pointer"
+                        size="lg"
+                        onClick={() => loginWithRedirect()}
+                      >
+                        Sign In to Buy
+                      </Button>
+                    )
                   ) : (
-                    <Button
-                      className="w-full cursor-pointer"
-                      size="lg"
-                      onClick={() => loginWithRedirect()}
-                    >
-                      Sign In to Buy
-                    </Button>
-                  )
-                ) : (
-                  <p className="w-full text-center text-sm text-muted-foreground">
-                    SOLD OUT
+                    <p className="w-full text-center text-sm text-muted-foreground">
+                      SOLD OUT
+                    </p>
+                  )}
+                </CardFooter>
+              </>
+            )}
+
+            {eventAlreadyStarted && (
+              <>
+                <CardContent className="space-y-4 py-4">
+                  {/* Available count */}
+                  <div className="text-center">
+                    <span className="text-4xl font-bold tracking-tight">
+                      N/A
+                    </span>
+                    <p className="text-sm text-muted-foreground">
+                      Event ended
+                    </p>
+                  </div>
+
+                  <p className="text-center text-sm text-muted-foreground">
+                    This event took place on <span className="block">{formattedDate}</span>
                   </p>
-                )}
-              </CardFooter>
-            </Card>
-          </div>
-        )}
+                </CardContent>
+              </>
+            )}
+          </Card>
+        </div>
       </div>
 
       {/* Background fetching indicator */}
