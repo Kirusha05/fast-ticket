@@ -18,5 +18,9 @@ export default defineConfig([
     languageOptions: {
       globals: globals.browser,
     },
+    rules: {
+      // "error" by default; affect just dev fast-refresh and will make CI fail, so make it just a warning
+      'react-refresh/only-export-components': 'warn',
+    },
   },
 ])
