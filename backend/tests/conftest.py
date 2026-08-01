@@ -5,7 +5,7 @@ from fastapi.testclient import TestClient
 from psycopg import AsyncConnection
 from psycopg.rows import dict_row
 from psycopg_pool import AsyncConnectionPool
-from config.config import config
+from config import config
 from routes.deps.auth import get_current_user
 
 # run tests with:

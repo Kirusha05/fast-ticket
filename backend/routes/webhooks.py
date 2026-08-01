@@ -1,7 +1,7 @@
 from fastapi import APIRouter, Depends, Header, Request, HTTPException
 from usecases import BookingsUseCase
-from config.db_session import get_db_session
-from config.config import config
+from config import get_db_session
+from config import config
 import stripe
 from models import EntityId
 

@@ -1,5 +1,5 @@
 import psycopg
-from config.config import config
+from config import config
 
 if not config.DB.DATABASE.endswith("_test"):
     raise RuntimeError("DB_DATABASE name must end with _test")

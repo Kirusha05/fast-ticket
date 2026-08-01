@@ -1,7 +1,7 @@
 from contextlib import asynccontextmanager
 from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
-from config.db_session import init_db_pool, close_db_pool
+from config import init_db_pool, close_db_pool
 
 from routes import users_router, events_router, bookings_router, webhooks_router, sales_router, tickets_router
 

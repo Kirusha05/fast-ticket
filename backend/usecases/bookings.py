@@ -30,8 +30,8 @@ from models import (
 )
 from datetime import datetime, timedelta, timezone
 import stripe
-from config.stripe_client import stripe_client
-from config.config import config
+from config import stripe_client
+from config import config
 
 
 class BookingsUseCase:

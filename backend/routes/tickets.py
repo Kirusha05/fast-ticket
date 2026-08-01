@@ -1,6 +1,6 @@
 from fastapi import APIRouter, Depends
 from usecases import TicketsUseCase
-from config.db_session import get_db_session
+from config import get_db_session
 from models import User, EntityId, ValidateTicketRequest
 from routes.deps.auth import get_current_user
 

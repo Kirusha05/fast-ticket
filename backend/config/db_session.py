@@ -1,6 +1,6 @@
 from psycopg_pool import AsyncConnectionPool
 from psycopg.rows import dict_row
-from config.config import config
+from config import config
 
 """
 Can also set these in Postgres

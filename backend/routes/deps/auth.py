@@ -1,8 +1,8 @@
 from fastapi import Request, HTTPException, Depends
 import httpx
 from jose import jwt, JWTError
-from config.config import Mode, config
-from config.db_session import get_db_session
+from config import Mode, config
+from config import get_db_session
 
 from models import User
 # from repositories import UsersRepository

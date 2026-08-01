@@ -2,7 +2,7 @@ from fastapi import APIRouter, Depends, Query
 from datetime import datetime
 
 from usecases import SalesUseCase
-from config.db_session import get_db_session
+from config import get_db_session
 from models import User, EntityId
 from models.sales import SalesSummary, TimeSeriesPoint, EventSalesSummary, TierSalesSummary, SalesGranularity
 from routes.deps.auth import get_current_user
