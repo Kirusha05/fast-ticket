@@ -3,7 +3,7 @@ import { createFileRoute, redirect } from "@tanstack/react-router";
 export const Route = createFileRoute("/")({
   component: HomePage,
   // No homepage for now
-  beforeLoad: ({ context }) => {
+  beforeLoad: () => {
     throw redirect({
       to: "/events",
     });

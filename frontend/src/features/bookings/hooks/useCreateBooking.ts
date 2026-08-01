@@ -9,7 +9,7 @@ export const useCreateBooking = () => {
 
   return useMutation({
     mutationFn: (body: CreateBookingRequest) => createBooking(auth, body),
-    onSuccess: (data, body) => {
+    onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ["bookings"] });
     },
   });

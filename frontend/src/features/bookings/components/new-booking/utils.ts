@@ -66,7 +66,7 @@ export function buildBookingRequest(
 
   // Tiered
   const tiered_tickets = Object.entries(tierCounts)
-    .filter(([_, count]) => count > 0)
+    .filter(([, count]) => count > 0)
     .map(([tier_id, count]) => ({ tier_id, count }));
 
   return { event_id: event.id, tiered_tickets };

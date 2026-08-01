@@ -21,7 +21,6 @@ import {
 } from "@/components/ui";
 import { EventType, type Event } from "@/features/events/types";
 import { useAuth0 } from "@auth0/auth0-react";
-import { cn } from "@/lib/utils";
 
 function getLowestPrice(event: Event): number | null {
   if (event.event_type === EventType.SEATED && event.seats.length > 0) {

@@ -1,6 +1,6 @@
 import { Link, useLocation } from "@tanstack/react-router";
 import { useAuth0 } from "@auth0/auth0-react";
-import { CalendarIcon, LogInIcon, Ticket, UserIcon } from "lucide-react";
+import { LogInIcon, Ticket, UserIcon } from "lucide-react";
 
 import {
   Sidebar as SidebarPrimitive,
