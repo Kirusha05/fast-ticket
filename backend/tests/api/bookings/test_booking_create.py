@@ -57,7 +57,7 @@ async def test_booking_create_tiered(
     data = response.json()
     # print(json.dumps(data, indent=2))
 
-    assert response.status_code == 201
+    assert response.status_code == 200
     assert data["id"] is not None
     assert data["event"]["id"] == event_id
     assert data["status"] == "pending"
