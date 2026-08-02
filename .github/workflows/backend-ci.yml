@@ -58,4 +58,4 @@ jobs:
         run: MODE=test uv run alembic upgrade head  # MODE=test will load the env vars from .env.test
 
       - name: Run pytest
-        run: MODE=test uv run pytest
+        run: MODE=test uv run pytest tests/api

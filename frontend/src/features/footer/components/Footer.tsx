@@ -8,7 +8,7 @@ export function Footer() {
     },
     {
       title: "Company",
-      links: ["About", "Careers", "Blog", "Press"],
+      links: ["About", "Blog", "Press", "Careers"],
     },
     {
       title: "Support",
