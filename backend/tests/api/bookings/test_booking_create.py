@@ -509,7 +509,6 @@ async def test_booking_create_tiered_no_tickets_left(
     assert data["detail"] == "Not enough tickets available for tier General. Requested: 2, Available: 0"
 
 
-
 @pytest.mark.asyncio
 @patch("usecases.bookings.stripe_client")
 async def test_booking_create_tiered_non_existing_tier(
