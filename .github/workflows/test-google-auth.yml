@@ -6,6 +6,7 @@ on:
 jobs:
   test:
     runs-on: ubuntu-latest
+    environment: Production  # must match the env created in GitHub settings
     permissions:
       contents: read
       id-token: write  # this will issue the OIDC token for Workload Identity Federation
