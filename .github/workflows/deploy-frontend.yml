@@ -71,5 +71,5 @@ jobs:
           --cpu-boost \
           --allow-unauthenticated \
           --timeout=30 \
-          --startup-probe=initialDelaySeconds=10,timeoutSeconds=3,periodSeconds=10,failureThreshold=3,httpGet.path=/health,httpGet.port=8000 \
-          --liveness-probe=initialDelaySeconds=10,timeoutSeconds=3,periodSeconds=10,failureThreshold=3,httpGet.path=/health,httpGet.port=8000
+          --startup-probe=initialDelaySeconds=10,timeoutSeconds=3,periodSeconds=10,failureThreshold=3,httpGet.path=/health,httpGet.port=80 \
+          --liveness-probe=initialDelaySeconds=10,timeoutSeconds=3,periodSeconds=10,failureThreshold=3,httpGet.path=/health,httpGet.port=80
