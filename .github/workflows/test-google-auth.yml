@@ -1,10 +1,10 @@
-name: Deploy Backend
+name: Test Google Auth
 
 on:
   workflow_dispatch:
 
 jobs:
-  deploy:
+  test:
     runs-on: ubuntu-latest
     permissions:
       contents: read
@@ -16,6 +16,12 @@ jobs:
     steps:
       - name: Checkout
         uses: actions/checkout@v7
+
+      - name: Debug WIF Provider
+        run: |
+          echo "Provider length: ${#WIF_PROVIDER}"
+        env:
+          WIF_PROVIDER: ${{ vars.WIF_PROVIDER }}
 
       - name: Authenticate to Google Cloud
         uses: google-github-actions/auth@v3
