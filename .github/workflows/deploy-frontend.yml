@@ -7,6 +7,7 @@ on:
     # a pull request that merged into main will trigger the push event
     paths:
       - "frontend/**"
+      - ".github/workflows/deploy-frontend.yml"
 
 jobs:
   deploy:
@@ -71,5 +72,5 @@ jobs:
           --cpu-boost \
           --allow-unauthenticated \
           --timeout=30 \
-          --startup-probe=initialDelaySeconds=10,timeoutSeconds=3,periodSeconds=10,failureThreshold=3,httpGet.path=/health,httpGet.port=8000 \
-          --liveness-probe=initialDelaySeconds=10,timeoutSeconds=3,periodSeconds=10,failureThreshold=3,httpGet.path=/health,httpGet.port=8000
+          --startup-probe=initialDelaySeconds=10,timeoutSeconds=3,periodSeconds=10,failureThreshold=3,httpGet.path=/health,httpGet.port=80 \
+          --liveness-probe=initialDelaySeconds=10,timeoutSeconds=3,periodSeconds=10,failureThreshold=3,httpGet.path=/health,httpGet.port=80
