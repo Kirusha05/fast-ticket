@@ -1,0 +1,32 @@
+name: Deploy Backend
+
+on:
+  workflow_dispatch:
+
+jobs:
+  deploy:
+    runs-on: ubuntu-latest
+    permissions:
+      contents: read
+      id-token: write  # this will issue the OIDC token for Workload Identity Federation
+
+    env:
+      DEPLOYER_IDENTITY: github-deployer  # the Service Account that will push the image and create the Cloud Run service
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v7
+
+      - name: Authenticate to Google Cloud
+        uses: google-github-actions/auth@v3
+        with:
+          # $VAR won't resolve inside with: blocks, must use GitHub expression syntax here
+          workload_identity_provider: ${{ vars.WIF_PROVIDER }}
+          service_account: ${{ env.DEPLOYER_IDENTITY }}@${{ vars.GCP_PROJECT_ID }}.iam.gserviceaccount.com
+
+      - name: 'Set up Cloud SDK'
+        uses: 'google-github-actions/setup-gcloud@v3'
+
+      - run: gcloud auth list
+
+      - run: gcloud run services list --region=${{ vars.GCP_REGION }}
