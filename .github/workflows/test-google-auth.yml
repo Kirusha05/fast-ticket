@@ -6,7 +6,7 @@ on:
 jobs:
   test:
     runs-on: ubuntu-latest
-    environment: Production  # must match the env created in GitHub settings
+    environment: Production  # must match the env created in GitHub settings, so GitHub can inject the env-scoped variables
     permissions:
       contents: read
       id-token: write  # this will issue the OIDC token for Workload Identity Federation
@@ -20,14 +20,13 @@ jobs:
 
       - name: Debug WIF Provider
         run: |
-          echo "Provider length: ${#WIF_PROVIDER}"
+          echo "WIF Provider length: ${#WIF_PROVIDER}"
         env:
           WIF_PROVIDER: ${{ vars.WIF_PROVIDER }}
 
       - name: Authenticate to Google Cloud
         uses: google-github-actions/auth@v3
         with:
-          # $VAR won't resolve inside with: blocks, must use GitHub expression syntax here
           workload_identity_provider: ${{ vars.WIF_PROVIDER }}
           service_account: ${{ env.DEPLOYER_IDENTITY }}@${{ vars.GCP_PROJECT_ID }}.iam.gserviceaccount.com
 
@@ -35,5 +34,4 @@ jobs:
         uses: 'google-github-actions/setup-gcloud@v3'
 
       - run: gcloud auth list
-
       - run: gcloud run services list --region=${{ vars.GCP_REGION }}
