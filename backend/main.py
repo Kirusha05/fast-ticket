@@ -35,7 +35,7 @@ app.add_middleware(
 
 @app.get('/')
 async def root():
-    return {"message": "What's good bro???"}
+    return {"message": "What's good bro?!?!?!"}
 
 @app.get('/health')
 async def health():
