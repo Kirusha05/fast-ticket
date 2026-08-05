@@ -8,6 +8,7 @@ on:
     paths:
       - "frontend/**"
       - ".github/workflows/deploy-frontend.yml"
+      - "infrastructure/prod/**"
 
 jobs:
   deploy:
@@ -15,7 +16,7 @@ jobs:
     environment: Production
     permissions:
       contents: read
-      id-token: write
+      id-token: write  # this will issue the OIDC token for Workload Identity Federation
     defaults:
       run:
         working-directory: frontend

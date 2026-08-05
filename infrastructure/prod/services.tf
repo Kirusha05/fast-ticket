@@ -5,6 +5,7 @@ resource "google_project_service" "services" {
     "artifactregistry.googleapis.com",
     "secretmanager.googleapis.com",
     "iam.googleapis.com",
+    "iamcredentials.googleapis.com", # used for Workload Identity Federation
     "cloudresourcemanager.googleapis.com",
     "serviceusage.googleapis.com",
   ])

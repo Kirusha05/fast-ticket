@@ -8,6 +8,7 @@ on:
     paths:
       - "backend/**"
       - ".github/workflows/deploy-backend.yml"
+      - "infrastructure/prod/**"
 
 jobs:
   deploy:
@@ -33,12 +34,29 @@ jobs:
       - name: Checkout
         uses: actions/checkout@v7
 
+      # Dummy step to view what the GitHub OIDC token looks like
+      - name: Get OIDC Token
+        run: |
+          echo "$ACTIONS_ID_TOKEN_REQUEST_URL"
+          echo "$ACTIONS_ID_TOKEN_REQUEST_TOKEN"
+          TOKEN=$(curl \
+            -H "Authorization: bearer $ACTIONS_ID_TOKEN_REQUEST_TOKEN" \
+            "$ACTIONS_ID_TOKEN_REQUEST_URL&audience=test" \
+            | jq -r '.value')
+
+          echo "$TOKEN"
+
       - name: Authenticate to Google Cloud
         uses: google-github-actions/auth@v3
         with:
           # $VAR won't resolve inside with: blocks, must use GitHub expression syntax here
           workload_identity_provider: ${{ vars.WIF_PROVIDER }}
           service_account: ${{ env.DEPLOYER_IDENTITY }}@${{ env.PROJECT_ID }}.iam.gserviceaccount.com
+
+      # When the auth@v3 action runs, it's not immediately talking to Google. First it calls back to GitHub itself, using the ACTIONS_ID_TOKEN_REQUEST_URL and ACTIONS_ID_TOKEN_REQUEST_TOKEN environment variables that GitHub automatically injects into every job (this requires permissions: id-token: write in your workflow — otherwise this step fails). The action asks GitHub's OIDC token endpoint: "give me an ID token, and set the audience to Google's STS endpoint."
+      # STS = Security Token Service, which powers Workload Identity Federation
+      # GitHub's servers generate a JWT, sign it with GitHub's private key, and return it
+      # The auth action now makes an HTTPS call to https://sts.googleapis.com/v1/token, passing the GitHub JWT as the subject_token, along with the WIF provider resource path (your WIF_PROVIDER value) telling Google which provider config to validate against.
 
       - name: Configure Docker
         run: |
