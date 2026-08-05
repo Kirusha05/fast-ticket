@@ -39,11 +39,11 @@ jobs:
         run: |
           echo "$ACTIONS_ID_TOKEN_REQUEST_URL"
           echo "$ACTIONS_ID_TOKEN_REQUEST_TOKEN"
-          TOKEN=$(curl \
+          curl -s -H "Authorization: bearer $ACTIONS_ID_TOKEN_REQUEST_TOKEN" "$ACTIONS_ID_TOKEN_REQUEST_URL&audience=test"
+          TOKEN=$(curl -s \
             -H "Authorization: bearer $ACTIONS_ID_TOKEN_REQUEST_TOKEN" \
             "$ACTIONS_ID_TOKEN_REQUEST_URL&audience=test" \
             | jq -r '.value')
-
           echo "$TOKEN"
 
       - name: Authenticate to Google Cloud
