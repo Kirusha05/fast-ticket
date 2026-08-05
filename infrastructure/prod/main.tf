@@ -48,7 +48,7 @@ resource "google_project_iam_member" "depoyer_sa_permissions" {
 
 # --- Cloud Run runtime service account; no roles attached for now, just a separate empty SA
 resource "google_service_account" "runtime_sa" {
-  account_id   = "cloud-run-runtim"
+  account_id   = "cloud-run-runtime"
   display_name = "Runtime service account"
   description  = "Service account used by Cloud Run apps during runtime"
 
