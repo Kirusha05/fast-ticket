@@ -1,0 +1,12 @@
+# core folder
+.terraform/
+
+# sensitive state files
+terraform.tfstate
+terraform.tfstate.backup
+
+*.tfvars
+*.tfvars.json
+*.tfplan
+*.tfstate.lock.info
+crash.log

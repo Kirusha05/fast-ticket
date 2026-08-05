@@ -8,6 +8,7 @@ on:
     paths:
       - "frontend/**"
       - ".github/workflows/deploy-frontend.yml"
+      - "infrastructure/prod/**"
 
 jobs:
   deploy:
@@ -15,7 +16,7 @@ jobs:
     environment: Production
     permissions:
       contents: read
-      id-token: write
+      id-token: write  # this will issue the OIDC token for Workload Identity Federation
     defaults:
       run:
         working-directory: frontend
@@ -70,7 +71,7 @@ jobs:
           --cpu=1 \
           --memory=512Mi \
           --cpu-boost \
-          --allow-unauthenticated \
+          --no-invoker-iam-check \
           --timeout=30 \
           --startup-probe=initialDelaySeconds=10,timeoutSeconds=3,periodSeconds=10,failureThreshold=3,httpGet.path=/health,httpGet.port=80 \
           --liveness-probe=initialDelaySeconds=10,timeoutSeconds=3,periodSeconds=10,failureThreshold=3,httpGet.path=/health,httpGet.port=80
