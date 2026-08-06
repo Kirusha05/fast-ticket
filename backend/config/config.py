@@ -84,13 +84,23 @@ class Auth0Config(BaseSettings):
     )
 
 
+class CorsConfig(BaseSettings):
+    MAIN_ORIGIN: str = "http://localhost:5173"
+
+    model_config = SettingsConfigDict(
+        env_prefix="CORS_",
+        env_file=load_environment_from_file(),
+        extra="ignore",
+    )
+
+
 class StripeConfig(BaseSettings):
     SECRET_KEY: str = "dummy"
     PUBLISHABLE_KEY: str = "dummy"
     WEBHOOK_SECRET: str = "dummy"
     CURRENCY: str = "dummy"
-    SUCCESS_URL: str = "dummy"
-    CANCEL_URL: str = "dummy"
+    SUCCESS_URL_PATH: str = "dummy"
+    CANCEL_URL_PATH: str = "dummy"
 
     model_config = SettingsConfigDict(
         env_prefix="STRIPE_",
@@ -103,6 +113,7 @@ class Config(BaseSettings):
     MODE: Mode = get_environment()
     DB: DBConfig = DBConfig()
     AUTH0: Auth0Config = Auth0Config()
+    CORS: CorsConfig = CorsConfig()
     STRIPE: StripeConfig = StripeConfig()
     BOOKING_RESERVATION_TTL_HOURS: int = 2  # 1+ hours (at least 30 min, required by Stripe checkout expires_at)
 
@@ -114,3 +125,4 @@ class Config(BaseSettings):
 
 config = Config()
 print(f"Config.MODE = {config.MODE}")
+print(f"Config.CORS.MAIN_ORIGIN = {config.CORS.MAIN_ORIGIN}")

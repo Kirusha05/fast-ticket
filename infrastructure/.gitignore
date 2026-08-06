@@ -10,3 +10,5 @@ terraform.tfstate.backup
 *.tfplan
 *.tfstate.lock.info
 crash.log
+
+!*.auto.tfvars
