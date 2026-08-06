@@ -1,5 +1,5 @@
-# enables the required GCloud APIs
-resource "google_project_service" "services" {
+# enables the required GCloud APIs for the future infrastructure
+resource "google_project_service" "api_enablement" {
   for_each = toset([
     "run.googleapis.com",
     "artifactregistry.googleapis.com",

@@ -35,7 +35,6 @@ resource "google_storage_bucket" "terraform_state" {
     }
   }
 
-
   lifecycle {
     prevent_destroy = true
   }

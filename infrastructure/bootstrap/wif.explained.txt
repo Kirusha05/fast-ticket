@@ -1,0 +1,84 @@
+# --- Setting up Workload Identity Federation
+# create the workload identity pool
+# wtf is a pool? from GCloud Web Console:
+# "Create a pool for each environment that needs access to Google Cloud resources"
+# so GitHub Actions (or GitLab CI, or a Kubernetes Cluster) will be one of these environments
+# "environment" means an external identity environment, not a deployment environment like development/staging/production.
+# The Workload Identity Pool is where you tell Google Cloud: "I trust identities coming from this external environment."
+
+# using this random id suffix, because identity pools get soft-deleted on "terraform destroy", getting hard-deleted only after 30 days
+# subsequent "terraform apply"-s will try to create a new pool with the same id of the soft-deleted (still existing) pool
+# and will result in a "Error creating WorkloadIdentityPool: googleapi: Error 409: Requested entity already exists"
+resource "random_id" "pool_suffix" {
+  byte_length = 4
+}
+
+resource "google_iam_workload_identity_pool" "wif_github_pool" {
+  workload_identity_pool_id = "github-identity-pool-${random_id.pool_suffix.hex}"
+  display_name              = "GitHub Actions identity pool"
+}
+
+# One pool can contain multiple providers.
+# Workload Identity Pool
+# ├── Provider for your personal GitHub account
+# ├── Provider for your company's GitHub organization
+# └── Provider for another GitHub Enterprise instance
+# The provider defines how to validate the incoming identity tokens (issuer, attribute mapping, etc.)
+
+# Despite it being named "provider", it doesn't provide anything, no authentication, no credentials, nothing like that
+# A "provider" is just a weird name for a "configuration". That's all. It just says "When someone gives me a token 
+# whose issuer is https://token.actions.githubusercontent.com, here's how to validate it."
+# But we could also say that Github is the Identity Provider, providing the JWT that mentions the repo, the branch, the actor.
+# Github provides this information and Google validates it. Github creates a signed OIDC JWT that looks like this:
+# {
+#   "iss": "https://token.actions.githubusercontent.com",
+#   "sub": "repo:Kirusha05/ticket-app:ref:refs/heads/main",
+#   "repository": "Kirusha05/ticket-app",
+#   "repository_owner": "Kirusha05",
+#   "actor": "Kirusha05",
+#   "ref": "refs/heads/main",
+#   "sha": "8c7c0d..."
+# }
+
+# create the Github provider, telling Google that this pool trusts GitHub
+# and will successfully authorize the identities from the repository and branch set in attribute_condition
+# attribute_condition is evaluated at token-exchange time, before Google even issues a federated token. 
+# If the incoming assertion doesn't satisfy the CEL expression, the exchange fails outright with a permission-denied error
+# and google-github-actions/auth fails before it ever gets to the impersonation step
+
+# attribute_mapping sets multiple attributes:
+# - google.subject = assertion.sub (repo:Kirusha05/ticket-app:ref:refs/heads/main), required by google identity
+# (every authenticated identity needs one canonical identifier)
+# - attribute.repository=assertion.repository (the source repo), used later on for IAM bindings to the service account
+resource "google_iam_workload_identity_pool_provider" "wif_github_provider" {
+  workload_identity_pool_id          = google_iam_workload_identity_pool.wif_github_pool.workload_identity_pool_id
+  workload_identity_pool_provider_id = "main-branch-provider"
+
+  oidc {
+    issuer_uri = "https://token.actions.githubusercontent.com"
+  }
+
+  attribute_condition = "assertion.repository == '${var.github_repo}' && assertion.ref == 'refs/heads/main'"
+  attribute_mapping = {
+    "google.subject"       = "assertion.sub"
+    "attribute.repository" = "assertion.repository"
+  }
+
+  depends_on = [google_iam_workload_identity_pool.wif_github_pool]
+}
+
+# the generated provider name (projects/123456789012/locations/global/workloadIdentityPools/gh-pool/providers/gh-provider)
+# will be the WIF_PROVIDER env var used by google-github-actions/auth
+# This value just tells Google Cloud "when validating a token, use this specific pool+provider configuration to check it."
+
+# allow impersonation
+# roles/iam.workloadIdentityUser: lets an external identity (from a WIF pool) impersonate the service account 
+# by exchanging its federated token for a short-lived access token of that SA.
+# "attribute.repository/${var.github_repo}" uses the exact attribute we've set in the provider's attribute_mapping
+resource "google_service_account_iam_member" "workload_identity_impersonation" {
+  service_account_id = google_service_account.deployer_sa.id
+  role               = "roles/iam.workloadIdentityUser"
+  member             = "principalSet://iam.googleapis.com/projects/${var.project_number}/locations/global/workloadIdentityPools/${google_iam_workload_identity_pool.wif_github_pool.workload_identity_pool_id}/attribute.repository/${var.github_repo}"
+
+  depends_on = [google_iam_workload_identity_pool.wif_github_pool]
+}
