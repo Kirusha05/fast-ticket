@@ -6,7 +6,8 @@
 - Frontend: TypeScript React (Vite), React Query, React Router, ShadCN, Tailwind
 - AuthN/AuthZ: Auth0 with its React client and and Auth0 JWKS validation on the backend for each user-related request
 - Payments: Stripe
-- Deployment: deployed on Google Cloud Run as two services (backend and frontend)
+- Deployment: deployed on Google Cloud Run as two services (backend and frontend) through the github-deployer SA
+- Infrastructure: the whole app infrastructure is available as IaC using Terraform: apply infrastructure/bootstrap once locally to create the remote backend inside a GCS bucket, the required WIF (Workload Identity Federation) components for Google auth inside the workflows & the necessary Service Accounts (github-deployer, terraform-planner and terraform-runner). Then CI/CD (through terraform-planner SA) runs "terraform plan" on pull requests to test the new infra code changes and to add a PR comment with the plan output for easier review, and finally runs "terraform apply" inside infrastructure/prod (through terraform-runner SA) on each PR merged into main
 - Testing: Pytest for the backend functionality and k6 for performance testing
 
 ### Features:
