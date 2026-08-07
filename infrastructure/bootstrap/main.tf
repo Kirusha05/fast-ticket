@@ -39,17 +39,3 @@ resource "google_storage_bucket" "terraform_state" {
     prevent_destroy = true
   }
 }
-
-# # and a service account that will run "terraform apply" or access the outputs inside the CI/CD pipeline
-# resource "google_service_account" "terraform_ci" {
-#   account_id   = "terraform-ci-cd"
-#   display_name = "Terraform CI/CD (GitHub Actions)"
-#   description  = "Used by GitHub Actions to plan/apply Terraform changes"
-# }
-
-# # allow reading/writing the state bucket
-# resource "google_storage_bucket_iam_member" "terraform_ci_state_access" {
-#   bucket = google_storage_bucket.terraform_state.name
-#   role   = "roles/storage.objectAdmin"
-#   member = "serviceAccount:${google_service_account.terraform_ci.email}"
-# }
