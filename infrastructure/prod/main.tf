@@ -201,7 +201,7 @@ resource "google_cloud_run_v2_service" "backend_service" {
   # service-level scaling
   scaling {
     min_instance_count = 0
-    max_instance_count = 2
+    max_instance_count = 1
   }
 
   template {
