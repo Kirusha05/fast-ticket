@@ -5,10 +5,14 @@ WORKDIR /app
 
 # Install dependencies
 COPY package*.json ./
-RUN npm install
+RUN npm ci
 
 # Copy source
 COPY . .
+
+# Accept the build argument and expose it to the Vite build process
+ARG VITE_API_BASE_URL
+ENV VITE_API_BASE_URL=$VITE_API_BASE_URL
 
 # Build the app
 RUN npm run build
