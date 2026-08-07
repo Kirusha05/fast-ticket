@@ -14,6 +14,7 @@ concurrency:
 
 jobs:
   terraform:
+    name: Deploy Terraform infra
     runs-on: ubuntu-latest
     environment: Production
     permissions:

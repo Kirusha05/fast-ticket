@@ -15,6 +15,7 @@ concurrency:
 
 jobs:
   terraform:
+    name: Test Terraform infra
     runs-on: ubuntu-latest
     permissions:
       contents: read

@@ -156,6 +156,8 @@ locals {
 
   # env var name -> Secret Manager secret_id mapping
   backend_secret_env = {
+    DB_HOST               = "db-host"
+    DB_USER               = "db-user"
     DB_PASSWORD           = "db-password"
     AUTH0_CLIENT_SECRET   = "auth0-client-secret"
     STRIPE_SECRET_KEY     = "stripe-secret-key"
