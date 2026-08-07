@@ -43,7 +43,7 @@ jobs:
       - uses: hashicorp/setup-terraform@v4
 
       - run: terraform fmt -check
-      - run: terraform init
+      - run: terraform init -input=false
       - run: terraform validate
 
       - name: Terraform plan
@@ -68,12 +68,13 @@ jobs:
             }
 
             const outcome = process.env.PLAN_OUTCOME;
+            // used later for checking if a terraform plan comment already exists
             const marker = '<!-- terraform-plan-comment -->';
 
             const body = `${marker}
-            ### Terraform Plan Result: \`${outcome}\`
+            ### Terraform Plan result: \`${outcome}\`
 
-            <details><summary>Show Plan</summary>
+            <details><summary>Show plan</summary>
 
             \`\`\`terraform
             ${truncated ? '... (truncated) ...\n' : ''}${plan}
