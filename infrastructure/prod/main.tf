@@ -22,7 +22,7 @@ data "google_service_account" "deployer_sa" {
   account_id = "github-deployer"
 }
 
-resource "google_artifact_registry_repository_iam_member" "depoyer_sa_permissions" {
+resource "google_artifact_registry_repository_iam_member" "deployer_sa_ar_writer" {
   repository = google_artifact_registry_repository.app_repo.id
   role       = "roles/artifactregistry.writer"
   member     = data.google_service_account.deployer_sa.member
@@ -30,7 +30,7 @@ resource "google_artifact_registry_repository_iam_member" "depoyer_sa_permission
 }
 
 # and should be allowed to push new revisions to Cloud Run
-resource "google_project_iam_member" "depoyer_sa_permissions" {
+resource "google_project_iam_member" "deployer_sa_run_developer" {
   project = var.project_id
   role    = "roles/run.developer"
   member  = data.google_service_account.deployer_sa.member
@@ -115,6 +115,7 @@ resource "google_cloud_run_v2_service" "frontend_service" {
 
   # Without an ignore_changes block, the next terraform apply will revert the container 
   # back to us-docker.pkg.dev/cloudrun/container/hello, undoing whatever was deployed later on by CI/CD
+  # Terraform owns everything about the service except the image tag; CI/CD updates just the image tag on each deployment
   lifecycle {
     ignore_changes = [
       template[0].containers[0].image,
@@ -177,7 +178,7 @@ resource "google_secret_manager_secret" "backend_secrets" {
 resource "google_secret_manager_secret_version" "backend_secret_seed" {
   for_each    = google_secret_manager_secret.backend_secrets
   secret      = each.value.id
-  secret_data = "terraform-initial-placeholder-change-me"
+  secret_data = "terraform-initial-placeholder"
 }
 
 # Cloud Run runtime SA can read only these secrets, not all the project secrets
@@ -272,6 +273,7 @@ resource "google_cloud_run_v2_service" "backend_service" {
 
   # Without an ignore_changes block, the next terraform apply will revert the container 
   # back to us-docker.pkg.dev/cloudrun/container/hello, undoing whatever was deployed later on by CI/CD
+  # Terraform owns everything about the service except the image tag; CI/CD updates just the image tag on each deployment
   lifecycle {
     ignore_changes = [
       template[0].containers[0].image,

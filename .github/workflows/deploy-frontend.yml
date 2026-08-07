@@ -8,7 +8,6 @@ on:
     paths:
       - "frontend/**"
       - ".github/workflows/deploy-frontend.yml"
-      - "infrastructure/prod/**"
 
 jobs:
   deploy:
@@ -56,22 +55,7 @@ jobs:
           docker push \
           $REGION-docker.pkg.dev/$PROJECT_ID/$REPO_NAME/$IMAGE_NAME:$GITHUB_SHA
 
-      - name: Deploy Cloud Run
+      - name: Deploy Cloud Run with the new image
         run: |
           gcloud run deploy $SERVICE_NAME \
-          --image=$REGION-docker.pkg.dev/$PROJECT_ID/$REPO_NAME/$IMAGE_NAME:$GITHUB_SHA \
-          --service-account=$SERVICE_RUNTIME_IDENTITY@$PROJECT_ID.iam.gserviceaccount.com \
-          --region=$REGION \
-          --min=0 \
-          --max=1 \
-          --min-instances='default' \
-          --max-instances='default' \
-          --port=80 \
-          --concurrency=1000 \
-          --cpu=1 \
-          --memory=512Mi \
-          --cpu-boost \
-          --no-invoker-iam-check \
-          --timeout=30 \
-          --startup-probe=initialDelaySeconds=10,timeoutSeconds=3,periodSeconds=10,failureThreshold=3,httpGet.path=/health,httpGet.port=80 \
-          --liveness-probe=initialDelaySeconds=10,timeoutSeconds=3,periodSeconds=10,failureThreshold=3,httpGet.path=/health,httpGet.port=80
+          --image=$REGION-docker.pkg.dev/$PROJECT_ID/$REPO_NAME/$IMAGE_NAME:$GITHUB_SHA

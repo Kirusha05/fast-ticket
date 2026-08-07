@@ -8,7 +8,6 @@ on:
     paths:
       - "backend/**"
       - ".github/workflows/deploy-backend.yml"
-      - "infrastructure/prod/**"
 
 jobs:
   deploy:
@@ -16,7 +15,7 @@ jobs:
     environment: Production
     permissions:
       contents: read
-      id-token: write  # this will issue the OIDC token for Workload Identity Federation
+      id-token: write # this will issue the OIDC token for Workload Identity Federation
     defaults:
       run:
         working-directory: backend
@@ -26,25 +25,13 @@ jobs:
       REGION: ${{ vars.GCP_REGION }}
       REPO_NAME: ${{ vars.GCP_ARTIFACT_REPOSITORY_NAME }}
       IMAGE_NAME: backend
-      DEPLOYER_IDENTITY: github-deployer  # the Service Account that will push the image and create the Cloud Run service
+      DEPLOYER_IDENTITY: github-deployer # the Service Account that will push the image and create the Cloud Run service
       SERVICE_NAME: fast-ticket-backend
-      SERVICE_RUNTIME_IDENTITY: cloud-run-runtime  # the Service Account that the Cloud Run service itself will use
+      SERVICE_RUNTIME_IDENTITY: cloud-run-runtime # the Service Account that the Cloud Run service itself will use
 
     steps:
       - name: Checkout
         uses: actions/checkout@v7
-
-      # Dummy step to view what the GitHub OIDC token looks like
-      - name: Get OIDC Token
-        run: |
-          echo "$ACTIONS_ID_TOKEN_REQUEST_URL"
-          echo "$ACTIONS_ID_TOKEN_REQUEST_TOKEN"
-          curl -s -H "Authorization: bearer $ACTIONS_ID_TOKEN_REQUEST_TOKEN" "$ACTIONS_ID_TOKEN_REQUEST_URL&audience=test"
-          TOKEN=$(curl -s \
-            -H "Authorization: bearer $ACTIONS_ID_TOKEN_REQUEST_TOKEN" \
-            "$ACTIONS_ID_TOKEN_REQUEST_URL&audience=test" \
-            | jq -r '.value')
-          echo "$TOKEN"
 
       - name: Authenticate to Google Cloud
         uses: google-github-actions/auth@v3
@@ -76,19 +63,4 @@ jobs:
       - name: Deploy Cloud Run
         run: |
           gcloud run deploy $SERVICE_NAME \
-          --image=$REGION-docker.pkg.dev/$PROJECT_ID/$REPO_NAME/$IMAGE_NAME:$GITHUB_SHA \
-          --service-account=$SERVICE_RUNTIME_IDENTITY@$PROJECT_ID.iam.gserviceaccount.com \
-          --region=$REGION \
-          --min=0 \
-          --max=1 \
-          --min-instances='default' \
-          --max-instances='default' \
-          --port=8000 \
-          --concurrency=200 \
-          --cpu=1 \
-          --memory=512Mi \
-          --cpu-boost \
-          --no-invoker-iam-check \
-          --timeout=300 \
-          --startup-probe=initialDelaySeconds=10,timeoutSeconds=3,periodSeconds=10,failureThreshold=3,httpGet.path=/health,httpGet.port=8000 \
-          --liveness-probe=initialDelaySeconds=10,timeoutSeconds=3,periodSeconds=10,failureThreshold=3,httpGet.path=/health,httpGet.port=8000
+          --image=$REGION-docker.pkg.dev/$PROJECT_ID/$REPO_NAME/$IMAGE_NAME:$GITHUB_SHA

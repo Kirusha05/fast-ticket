@@ -5,5 +5,5 @@ output "terraform_state_gcs_bucket" {
 
 # represents the WIF_PROVIDER env var used by GitHub Actions
 output "workload_identity_pool_provider" {
-  value = google_iam_workload_identity_pool_provider.wif_github_provider.name
+  value = google_iam_workload_identity_pool_provider.github_provider.name
 }
