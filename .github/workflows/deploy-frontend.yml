@@ -44,9 +44,18 @@ jobs:
         run: |
           gcloud auth configure-docker $REGION-docker.pkg.dev
 
+      - name: Get backend URL
+        id: backend
+        run: |
+          BACKEND_URL=$(gcloud run services describe fast-ticket-backend \
+            --region=$REGION \
+            --format='value(status.url)')
+          echo "url=$BACKEND_URL" >> "$GITHUB_OUTPUT"
+
       - name: Build image
         run: |
           docker build \
+          --build-arg VITE_API_BASE_URL=${{ steps.backend.outputs.url }} \
           -t $REGION-docker.pkg.dev/$PROJECT_ID/$REPO_NAME/$IMAGE_NAME:$GITHUB_SHA \
           .
 

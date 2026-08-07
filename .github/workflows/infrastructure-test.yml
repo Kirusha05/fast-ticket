@@ -3,9 +3,9 @@ on:
   # will run "terraform plan" only on PRs towards main (most critical ones)
   pull_request:
     branches: [main]
-    paths:
-      - "infrastructure/prod/**"
-      - ".github/workflows/infrastructure.yml"
+    # paths:
+    #   - "infrastructure/prod/**"
+    #   - ".github/workflows/infrastructure.yml"
 
 # This config effectively creates a single-lane queue: only one terraform init/plan/apply sequence touches infrastructure/prod at a time, across all PRs and pushes
 # PR checks should always be relative to the latest applied state, so applies HAVE TO finish first so the plan reflects updates on the latest state
