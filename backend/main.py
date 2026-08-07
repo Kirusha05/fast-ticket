@@ -1,7 +1,7 @@
 from contextlib import asynccontextmanager
 from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
-from config import init_db_pool, close_db_pool
+from config import init_db_pool, close_db_pool, config
 
 from routes import users_router, events_router, bookings_router, webhooks_router, sales_router, tickets_router
 
@@ -21,9 +21,7 @@ app = FastAPI(lifespan=lifespan)
 app.add_middleware(
     CORSMiddleware,
     allow_origins=[
-        "http://localhost:5173", 
-        "https://fast-ticket-frontend-1068537215625.europe-west1.run.app",
-        "https://app.kreelox.com"
+        config.CORS.MAIN_ORIGIN
     ],  # Avoid wildcard * in prod
     allow_credentials=False,
     allow_methods=["*"],  # Open only necessary methods

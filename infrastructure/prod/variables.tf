@@ -1,20 +1,17 @@
+# this file should only define the structure (types and descriptions) of the infrastructure
+# the actual values will be loaded from .auto.tfvars files
 variable "project_id" {
-  type    = string
-  default = "fast-ticket-app"
+  type = string
 }
 
 variable "project_number" {
-  type    = string
-  default = "1068537215625"
+  type = string
 }
 
 variable "region" {
-  type    = string
-  default = "europe-west1"
+  type = string
 }
 
-
 variable "github_repo" {
-  type    = string
-  default = "Kirusha05/fast-ticket"
+  type = string
 }

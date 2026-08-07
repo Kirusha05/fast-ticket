@@ -325,9 +325,8 @@ class BookingsUseCase:
                             "quantity": 1,
                         }
                     ],
-                    "success_url": f"{config.STRIPE.SUCCESS_URL}?booking_id={str(booking_id)}",
-                    "cancel_url": config.STRIPE.CANCEL_URL,
-                    # "expires_at": int(booking.expires_at.timestamp() - (2 * 60)),  # expire 2 min earlier
+                    "success_url": f"{config.CORS.MAIN_ORIGIN}{config.STRIPE.SUCCESS_URL_PATH}?booking_id={str(booking_id)}",
+                    "cancel_url": f"{config.CORS.MAIN_ORIGIN}{config.STRIPE.CANCEL_URL_PATH}",
                     "expires_at": int(booking.expires_at.timestamp()),
                     "client_reference_id": str(booking_id),
                     "customer_email": current_user.email,
