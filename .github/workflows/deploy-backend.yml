@@ -63,4 +63,5 @@ jobs:
       - name: Deploy Cloud Run
         run: |
           gcloud run deploy $SERVICE_NAME \
-          --image=$REGION-docker.pkg.dev/$PROJECT_ID/$REPO_NAME/$IMAGE_NAME:$GITHUB_SHA
+          --image=$REGION-docker.pkg.dev/$PROJECT_ID/$REPO_NAME/$IMAGE_NAME:$GITHUB_SHA \
+          --region=$REGION
