@@ -1,0 +1,52 @@
+name: Deploy Infrastructure
+on:
+  push:
+    branches: [main]
+    paths:
+      - "infrastructure/prod/**"
+      - ".github/workflows/infrastructure.yml"
+
+# This config effectively creates a single-lane queue: only one terraform init/plan/apply sequence touches infrastructure/prod at a time, across all PRs and pushes
+# PR checks should always be relative to the latest applied state, so applies HAVE TO finish first so the plan reflects updates on the latest state
+concurrency:
+  group: terraform-prod
+  cancel-in-progress: false
+
+jobs:
+  terraform:
+    runs-on: ubuntu-latest
+    environment: Production
+    permissions:
+      contents: read
+      id-token: write
+      pull-requests: write
+    defaults:
+      run:
+        working-directory: infrastructure/prod
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v7
+
+      - name: Authenticate to Google Cloud
+        uses: google-github-actions/auth@v3
+        with:
+          workload_identity_provider: ${{ vars.WIF_PROVIDER }}
+          # terraform-runner SA (can run "terraform apply") for pushes on "main" branch
+          service_account: terraform-runner@${{ vars.GCP_PROJECT_ID }}.iam.gserviceaccount.com
+
+      - uses: hashicorp/setup-terraform@v4
+
+      - run: terraform init
+
+      - name: Terraform plan
+        id: plan
+        run: terraform plan -no-color -input=false
+        continue-on-error: true
+
+      - name: Fail if plan failed
+        if: steps.plan.outcome == 'failure'
+        run: exit 1
+
+      - name: Apply new Terraform updates
+        run: terraform apply -auto-approve

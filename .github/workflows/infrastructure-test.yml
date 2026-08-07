@@ -1,12 +1,7 @@
-name: Infrastructure
+name: Test Infrastructure
 on:
   # will run "terraform plan" only on PRs towards main (most critical ones)
   pull_request:
-    branches: [main]
-    paths:
-      - "infrastructure/prod/**"
-      - ".github/workflows/infrastructure.yml"
-  push:
     branches: [main]
     paths:
       - "infrastructure/prod/**"
@@ -21,7 +16,6 @@ concurrency:
 jobs:
   terraform:
     runs-on: ubuntu-latest
-    environment: Production
     permissions:
       contents: read
       id-token: write
@@ -29,10 +23,10 @@ jobs:
     defaults:
       run:
         working-directory: infrastructure/prod
-    # run the job only if there's a push event (can be triggered just by us) or a PR coming from branches inside our own repo
+    # run the job only if there's a PR coming from branches inside our own repo
     # this prevents the job from running as a result of PRs coming from public forks
-    # so fork PRs won't consume queue time and won't block our legitimate jobs
-    if: github.event_name == 'push' || github.event.pull_request.head.repo.full_name == github.repository
+    # so fork PRs won't consume queue time and won't block our legitimate terraform jobs
+    if: github.event.pull_request.head.repo.full_name == github.repository
 
     steps:
       - name: Checkout
@@ -42,13 +36,8 @@ jobs:
         uses: google-github-actions/auth@v3
         with:
           workload_identity_provider: ${{ vars.WIF_PROVIDER }}
-          # use terraform-runner SA (can run "terraform apply") for pushes on "main" branch
-          # or terraform-planner SA (can run "terraform plan") for PRs towards "main" branch
-          service_account:
-            >- # using && and ||, as Github does not have the ternary operator ?/:
-            ${{ github.event_name == 'push'
-                && format('terraform-runner@{0}.iam.gserviceaccount.com', vars.GCP_PROJECT_ID)
-                || format('terraform-planner@{0}.iam.gserviceaccount.com', vars.GCP_PROJECT_ID) }}
+          # terraform-planner SA (can run "terraform plan") for PRs towards "main" branch
+          service_account: terraform-planner@${{ vars.GCP_PROJECT_ID }}.iam.gserviceaccount.com
 
       - uses: hashicorp/setup-terraform@v4
 
@@ -120,7 +109,3 @@ jobs:
       - name: Fail if plan failed
         if: steps.plan.outcome == 'failure'
         run: exit 1
-
-      # run terraform apply just after a PR was merged into "main", triggering the push event
-      - if: github.event_name == 'push'
-        run: terraform apply -auto-approve
